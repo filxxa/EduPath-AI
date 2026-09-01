@@ -1,0 +1,22 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+.env/
+.venv/
+
+# Streamlit secrets
+.secrets/
+secrets.toml
+
+# Data generated at runtime
+data/student_profile.json
+data/sessions/
+
+# IDE
+.vscode/
+.idea/
+*.swp

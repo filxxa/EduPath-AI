@@ -1,0 +1,396 @@
+{
+  "metadata": {
+    "version": "1.0.0",
+    "last_updated": "2026-09-01",
+    "source": "EduPath AI curated dataset",
+    "disclaimer": "Admission requirements and deadlines are illustrative. Always verify with the official university website before applying."
+  },
+  "universities": [
+    {
+      "id": "fast-nuces",
+      "name": "FAST-NUCES",
+      "full_name": "FAST National University of Computer and Emerging Sciences",
+      "location": "Islamabad",
+      "website": "https://nu.edu.pk",
+      "description": "One of Pakistan's leading institutions for computing and engineering education.",
+      "programs": [
+        {
+          "id": "bs-cs",
+          "name": "BS Computer Science",
+          "duration": "4 years",
+          "requirements": {
+            "qualification": [
+              "FSc Pre-Engineering",
+              "ICS (Physics + Math)",
+              "A-Levels (Math + Physics/Computing)"
+            ],
+            "minimum_aggregate": 60.0,
+            "estimated_cutoff": 88.0,
+            "admission_test": "NTS-NAT IE/ICS",
+            "required_documents": [
+              {
+                "name": "FSc Transcript / A-Levels Equivalence",
+                "required": true
+              },
+              {
+                "name": "CNIC / B-Form",
+                "required": true
+              },
+              {
+                "name": "Valid NTS-NAT IE/ICS Score Card",
+                "required": true
+              },
+              {
+                "name": "Matriculation Certificate",
+                "required": true
+              },
+              {
+                "name": "Passport-size Photographs",
+                "required": true
+              }
+            ],
+            "application_deadline": "2027-07-15",
+            "fee_estimate_pkr": 150000
+          }
+        },
+        {
+          "id": "bs-ee",
+          "name": "BS Electrical Engineering",
+          "duration": "4 years",
+          "requirements": {
+            "qualification": [
+              "FSc Pre-Engineering",
+              "A-Levels (Math + Physics + Chemistry)"
+            ],
+            "minimum_aggregate": 60.0,
+            "estimated_cutoff": 86.0,
+            "admission_test": "NTS-NAT IE",
+            "required_documents": [
+              {
+                "name": "FSc Transcript / A-Levels Equivalence",
+                "required": true
+              },
+              {
+                "name": "CNIC / B-Form",
+                "required": true
+              },
+              {
+                "name": "Valid NTS-NAT IE Score Card",
+                "required": true
+              },
+              {
+                "name": "Matriculation Certificate",
+                "required": true
+              }
+            ],
+            "application_deadline": "2027-07-15",
+            "fee_estimate_pkr": 160000
+          }
+        }
+      ]
+    },
+    {
+      "id": "nust",
+      "name": "NUST",
+      "full_name": "National University of Sciences and Technology",
+      "location": "Islamabad",
+      "website": "https://nust.edu.pk",
+      "description": "Pakistan's top-ranked research university with strong engineering and computing programs.",
+      "programs": [
+        {
+          "id": "bs-cs",
+          "name": "BS Computer Science",
+          "duration": "4 years",
+          "requirements": {
+            "qualification": [
+              "FSc Pre-Engineering",
+              "ICS (Math + Physics)",
+              "A-Levels (Math + Physics/Computing)"
+            ],
+            "minimum_aggregate": 60.0,
+            "estimated_cutoff": 90.0,
+            "admission_test": "NUST Entry Test (NET)",
+            "required_documents": [
+              {
+                "name": "FSc Transcript / A-Levels Equivalence",
+                "required": true
+              },
+              {
+                "name": "CNIC / B-Form",
+                "required": true
+              },
+              {
+                "name": "NUST Entry Test (NET) Result",
+                "required": true
+              },
+              {
+                "name": "Matriculation Certificate",
+                "required": true
+              }
+            ],
+            "application_deadline": "2027-07-10",
+            "fee_estimate_pkr": 180000
+          }
+        },
+        {
+          "id": "bs-me",
+          "name": "BS Mechanical Engineering",
+          "duration": "4 years",
+          "requirements": {
+            "qualification": [
+              "FSc Pre-Engineering",
+              "A-Levels (Math + Physics + Chemistry)"
+            ],
+            "minimum_aggregate": 60.0,
+            "estimated_cutoff": 89.0,
+            "admission_test": "NUST Entry Test (NET)",
+            "required_documents": [
+              {
+                "name": "FSc Transcript / A-Levels Equivalence",
+                "required": true
+              },
+              {
+                "name": "CNIC / B-Form",
+                "required": true
+              },
+              {
+                "name": "NUST Entry Test (NET) Result",
+                "required": true
+              },
+              {
+                "name": "Matriculation Certificate",
+                "required": true
+              }
+            ],
+            "application_deadline": "2027-07-10",
+            "fee_estimate_pkr": 190000
+          }
+        }
+      ]
+    },
+    {
+      "id": "lums",
+      "name": "LUMS",
+      "full_name": "Lahore University of Management Sciences",
+      "location": "Lahore",
+      "website": "https://lums.edu.pk",
+      "description": "Premier private research university known for business, economics, and computer science.",
+      "programs": [
+        {
+          "id": "bs-cs",
+          "name": "BS Computer Science",
+          "duration": "4 years",
+          "requirements": {
+            "qualification": [
+              "FSc Pre-Engineering",
+              "ICS",
+              "A-Levels"
+            ],
+            "minimum_aggregate": 70.0,
+            "estimated_cutoff": 85.0,
+            "admission_test": "LUMS Common Admission Test (LCAT) / SAT",
+            "required_documents": [
+              {
+                "name": "FSc Transcript / A-Levels Equivalence",
+                "required": true
+              },
+              {
+                "name": "CNIC / B-Form",
+                "required": true
+              },
+              {
+                "name": "LCAT / SAT Score Report",
+                "required": true
+              },
+              {
+                "name": "Matriculation Certificate",
+                "required": true
+              },
+              {
+                "name": "Statement of Purpose",
+                "required": false
+              }
+            ],
+            "application_deadline": "2027-07-20",
+            "fee_estimate_pkr": 400000
+          }
+        },
+        {
+          "id": "bba",
+          "name": "BBA",
+          "duration": "4 years",
+          "requirements": {
+            "qualification": [
+              "FSc",
+              "FA",
+              "ICS",
+              "A-Levels",
+              "Equivalent"
+            ],
+            "minimum_aggregate": 65.0,
+            "estimated_cutoff": 80.0,
+            "admission_test": "LCAT / SAT",
+            "required_documents": [
+              {
+                "name": "FSc / FA / A-Levels Transcript",
+                "required": true
+              },
+              {
+                "name": "CNIC / B-Form",
+                "required": true
+              },
+              {
+                "name": "LCAT / SAT Score Report",
+                "required": true
+              },
+              {
+                "name": "Matriculation Certificate",
+                "required": true
+              }
+            ],
+            "application_deadline": "2027-07-20",
+            "fee_estimate_pkr": 420000
+          }
+        }
+      ]
+    },
+    {
+      "id": "comsats",
+      "name": "COMSATS",
+      "full_name": "COMSATS University Islamabad",
+      "location": "Islamabad",
+      "website": "https://comsats.edu.pk",
+      "description": "Large public-sector university with campuses across Pakistan and strong IT programs.",
+      "programs": [
+        {
+          "id": "bs-cs",
+          "name": "BS Computer Science",
+          "duration": "4 years",
+          "requirements": {
+            "qualification": [
+              "FSc Pre-Engineering",
+              "ICS (Math + Physics)",
+              "A-Levels (Math + Physics/Computing)"
+            ],
+            "minimum_aggregate": 50.0,
+            "estimated_cutoff": 78.0,
+            "admission_test": "NTS-NAT IE/ICS",
+            "required_documents": [
+              {
+                "name": "FSc Transcript / A-Levels Equivalence",
+                "required": true
+              },
+              {
+                "name": "CNIC / B-Form",
+                "required": true
+              },
+              {
+                "name": "Valid NTS-NAT IE/ICS Score Card",
+                "required": true
+              },
+              {
+                "name": "Matriculation Certificate",
+                "required": true
+              }
+            ],
+            "application_deadline": "2027-08-05",
+            "fee_estimate_pkr": 120000
+          }
+        }
+      ]
+    },
+    {
+      "id": "uet",
+      "name": "UET",
+      "full_name": "University of Engineering and Technology, Lahore",
+      "location": "Lahore",
+      "website": "https://uet.edu.pk",
+      "description": "Pakistan's oldest and one of the most respected engineering universities.",
+      "programs": [
+        {
+          "id": "bs-ce",
+          "name": "BS Civil Engineering",
+          "duration": "4 years",
+          "requirements": {
+            "qualification": [
+              "FSc Pre-Engineering",
+              "A-Levels (Math + Physics + Chemistry)"
+            ],
+            "minimum_aggregate": 60.0,
+            "estimated_cutoff": 87.0,
+            "admission_test": "ECAT (Engineering College Admission Test)",
+            "required_documents": [
+              {
+                "name": "FSc Transcript / A-Levels Equivalence",
+                "required": true
+              },
+              {
+                "name": "CNIC / B-Form",
+                "required": true
+              },
+              {
+                "name": "ECAT Score Card",
+                "required": true
+              },
+              {
+                "name": "Matriculation Certificate",
+                "required": true
+              },
+              {
+                "name": "Domicile Certificate",
+                "required": true
+              }
+            ],
+            "application_deadline": "2027-08-01",
+            "fee_estimate_pkr": 110000
+          }
+        }
+      ]
+    },
+    {
+      "id": "fast",
+      "name": "FAST",
+      "full_name": "FAST University",
+      "location": "Karachi",
+      "website": "https://nu.edu.pk",
+      "description": "Campus of FAST-NUCES offering computing and engineering programs.",
+      "programs": [
+        {
+          "id": "bs-cs",
+          "name": "BS Computer Science",
+          "duration": "4 years",
+          "requirements": {
+            "qualification": [
+              "FSc Pre-Engineering",
+              "ICS (Math + Physics)",
+              "A-Levels"
+            ],
+            "minimum_aggregate": 60.0,
+            "estimated_cutoff": 87.0,
+            "admission_test": "NTS-NAT IE/ICS",
+            "required_documents": [
+              {
+                "name": "FSc Transcript / A-Levels Equivalence",
+                "required": true
+              },
+              {
+                "name": "CNIC / B-Form",
+                "required": true
+              },
+              {
+                "name": "Valid NTS-NAT IE/ICS Score Card",
+                "required": true
+              },
+              {
+                "name": "Matriculation Certificate",
+                "required": true
+              }
+            ],
+            "application_deadline": "2027-07-15",
+            "fee_estimate_pkr": 150000
+          }
+        }
+      ]
+    }
+  ]
+}
