@@ -4,14 +4,18 @@ from __future__ import annotations
 import streamlit as st
 
 from backend.data_loader import list_programs, list_universities, load_universities
-from ui import init_session_state, render_sidebar
+from ui import init_session_state, inject_theme, nav_row, page_header, render_sidebar
 
 st.set_page_config(page_title="Select Program | EduPath AI", page_icon="🎓", layout="wide")
 init_session_state()
+inject_theme()
 render_sidebar()
 
-st.title("STEP 2: Choose Your University and Program")
-st.markdown("Select from a curated list of top Pakistani universities and programs.")
+page_header(
+    "Choose Your University & Program",
+    "Select from a curated list of top Pakistani universities and programs.",
+    "🎓",
+)
 
 data = load_universities()
 universities = list_universities(data)
@@ -19,10 +23,13 @@ universities = list_universities(data)
 cities = sorted({u.get("location", "Other") for u in universities})
 fields = sorted({p.get("name", "") for u in universities for p in list_programs(u)})
 
-fcol1, fcol2 = st.columns(2)
-selected_city = fcol1.selectbox("Filter by City", ["All"] + cities)
-selected_field = fcol2.selectbox("Filter by Field", ["All"] + fields)
+with st.container(border=True):
+    st.markdown("### 🔍 Filters")
+    fcol1, fcol2 = st.columns(2)
+    selected_city = fcol1.selectbox("Filter by City", ["All"] + cities)
+    selected_field = fcol2.selectbox("Filter by Field", ["All"] + fields)
 
+match_count = 0
 for uni in universities:
     city_match = selected_city == "All" or uni.get("location") == selected_city
     programs = list_programs(uni)
@@ -31,28 +38,34 @@ for uni in universities:
         if not (city_match and field_match):
             continue
 
+        match_count += 1
+        selected = (
+            st.session_state.get("selected_university_id") == uni["id"]
+            and st.session_state.get("selected_program_id") == prog["id"]
+        )
+
         with st.container(border=True):
             c1, c2 = st.columns([3, 1])
-            c1.subheader(f"{uni['name']} — {prog['name']}")
+            c1.markdown(f"#### {uni['name']} — {prog['name']}")
             c1.caption(f"{uni.get('full_name')} · {uni.get('location')}")
             c1.write(uni.get("description", ""))
 
             req = prog.get("requirements", {})
             c1.markdown(
                 f"""
-                **Duration:** {prog.get('duration', 'N/A')}  
-                **Min Aggregate:** {req.get('minimum_aggregate')}%  
-                **Test:** {req.get('admission_test', 'N/A')}  
-                **Deadline:** {req.get('application_deadline', 'N/A')}
-                """
+                <div style="margin-top:0.5rem;">
+                    <span class="ep-chip">⏱️ {prog.get('duration', 'N/A')}</span>
+                    <span class="ep-chip">✅ Min {req.get('minimum_aggregate')}%</span>
+                    <span class="ep-chip">📝 {req.get('admission_test', 'N/A')}</span>
+                    <span class="ep-chip">📅 {req.get('application_deadline', 'N/A')}</span>
+                </div>
+                """,
+                unsafe_allow_html=True,
             )
 
-            selected = (
-                st.session_state.get("selected_university_id") == uni["id"]
-                and st.session_state.get("selected_program_id") == prog["id"]
-            )
             btn_label = "Selected ✓" if selected else "Select Program"
-            if c2.button(btn_label, key=f"select_{uni['id']}_{prog['id']}", use_container_width=True):
+            btn_type = "secondary" if selected else "primary"
+            if c2.button(btn_label, key=f"select_{uni['id']}_{prog['id']}", use_container_width=True, type=btn_type):
                 st.session_state["selected_university_id"] = uni["id"]
                 st.session_state["selected_program_id"] = prog["id"]
                 st.session_state["selected_program_with_university"] = {
@@ -64,9 +77,12 @@ for uni in universities:
                 st.success(f"Selected {uni['name']} — {prog['name']}")
                 st.rerun()
 
-st.divider()
-c1, c2 = st.columns(2)
-if c1.button("← Back to Profile", use_container_width=True):
-    st.switch_page("pages/2_Profile.py")
-if c2.button("Next: Check Eligibility →", type="primary", use_container_width=True):
-    st.switch_page("pages/4_Eligibility_Check.py")
+if match_count == 0:
+    st.info("No programs match your filters. Try selecting 'All' for city or field.")
+
+nav_row(
+    back_page="pages/2_Profile.py",
+    next_page="pages/4_Eligibility_Check.py",
+    back_label="← Back to Profile",
+    next_label="Next: Check Eligibility →",
+)
