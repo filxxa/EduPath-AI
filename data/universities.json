@@ -1,9 +1,9 @@
 {
   "metadata": {
-    "version": "1.0.0",
-    "last_updated": "2026-09-01",
-    "source": "EduPath AI curated dataset",
-    "disclaimer": "Admission requirements and deadlines are illustrative. Always verify with the official university website before applying."
+    "version": "2.0.0",
+    "last_updated": "2026-09-02",
+    "source": "User-provided verified admission dataset",
+    "disclaimer": "Admission requirements and deadlines are based on university-provided information and are not officially verified. Always confirm with the official university website before applying."
   },
   "universities": [
     {
@@ -13,6 +13,12 @@
       "location": "Islamabad",
       "website": "https://nu.edu.pk",
       "description": "One of Pakistan's leading institutions for computing and engineering education.",
+      "sources": [
+        {
+          "url": "https://nu.edu.pk",
+          "last_verified": "2026-09-02"
+        }
+      ],
       "programs": [
         {
           "id": "bs-cs",
@@ -21,12 +27,14 @@
           "requirements": {
             "qualification": [
               "FSc Pre-Engineering",
-              "ICS (Physics + Math)",
+              "ICS (Physics + Math / Computer)",
               "A-Levels (Math + Physics/Computing)"
             ],
-            "minimum_aggregate": 60.0,
-            "estimated_cutoff": 88.0,
-            "admission_test": "NTS-NAT IE/ICS",
+            "minimum_aggregate": 50.0,
+            "estimated_cutoff": 76.0,
+            "admission_test": "NU Online Admission Test",
+            "notes": "Accepts NTS-NAT as an alternative. The standard aggregate formula is 10% Matric, 40% HSSC, 50% test.",
+            "aggregate_formula": "10% Matric + 40% HSSC + 50% test",
             "required_documents": [
               {
                 "name": "FSc Transcript / A-Levels Equivalence",
@@ -37,7 +45,7 @@
                 "required": true
               },
               {
-                "name": "Valid NTS-NAT IE/ICS Score Card",
+                "name": "NU Online Admission Test Score Card",
                 "required": true
               },
               {
@@ -49,8 +57,8 @@
                 "required": true
               }
             ],
-            "application_deadline": "2027-07-15",
-            "fee_estimate_pkr": 150000
+            "application_deadline": "2027-07-05",
+            "fee_estimate_pkr": 180000
           }
         },
         {
@@ -63,8 +71,10 @@
               "A-Levels (Math + Physics + Chemistry)"
             ],
             "minimum_aggregate": 60.0,
-            "estimated_cutoff": 86.0,
-            "admission_test": "NTS-NAT IE",
+            "estimated_cutoff": 68.0,
+            "admission_test": "NU Online Admission Test",
+            "notes": "Accepts NTS-NAT IE as an alternative. The standard aggregate formula is 10% Matric, 40% HSSC, 50% test.",
+            "aggregate_formula": "10% Matric + 40% HSSC + 50% test",
             "required_documents": [
               {
                 "name": "FSc Transcript / A-Levels Equivalence",
@@ -75,7 +85,7 @@
                 "required": true
               },
               {
-                "name": "Valid NTS-NAT IE Score Card",
+                "name": "NU Online Admission Test Score Card",
                 "required": true
               },
               {
@@ -83,8 +93,8 @@
                 "required": true
               }
             ],
-            "application_deadline": "2027-07-15",
-            "fee_estimate_pkr": 160000
+            "application_deadline": "2027-07-05",
+            "fee_estimate_pkr": 180000
           }
         }
       ]
@@ -96,6 +106,12 @@
       "location": "Islamabad",
       "website": "https://nust.edu.pk",
       "description": "Pakistan's top-ranked research university with strong engineering and computing programs.",
+      "sources": [
+        {
+          "url": "https://nust.edu.pk",
+          "last_verified": "2026-09-02"
+        }
+      ],
       "programs": [
         {
           "id": "bs-cs",
@@ -104,15 +120,17 @@
           "requirements": {
             "qualification": [
               "FSc Pre-Engineering",
-              "ICS (Math + Physics)",
+              "ICS (Math + Physics / Computer)",
               "A-Levels (Math + Physics/Computing)"
             ],
             "minimum_aggregate": 60.0,
-            "estimated_cutoff": 90.0,
+            "estimated_cutoff": 81.5,
             "admission_test": "NUST Entry Test (NET)",
+            "notes": "SAT / ACT accepted as alternatives. The aggregate formula is 10% Matric, 15% HSSC, 75% NET.",
+            "aggregate_formula": "10% Matric + 15% HSSC + 75% NET",
             "required_documents": [
               {
-                "name": "FSc Transcript / A-Levels Equivalence",
+                "name": "FSc Transcript / A-Levels IBCC Equivalence",
                 "required": true
               },
               {
@@ -124,12 +142,12 @@
                 "required": true
               },
               {
-                "name": "Matriculation Certificate",
+                "name": "Matriculation Certificate / O-Level Equivalence",
                 "required": true
               }
             ],
-            "application_deadline": "2027-07-10",
-            "fee_estimate_pkr": 180000
+            "application_deadline": "2027-06-25",
+            "fee_estimate_pkr": 195000
           }
         },
         {
@@ -142,11 +160,13 @@
               "A-Levels (Math + Physics + Chemistry)"
             ],
             "minimum_aggregate": 60.0,
-            "estimated_cutoff": 89.0,
+            "estimated_cutoff": 74.5,
             "admission_test": "NUST Entry Test (NET)",
+            "notes": "The aggregate formula is 10% Matric, 15% HSSC, 75% NET.",
+            "aggregate_formula": "10% Matric + 15% HSSC + 75% NET",
             "required_documents": [
               {
-                "name": "FSc Transcript / A-Levels Equivalence",
+                "name": "FSc Transcript / A-Levels IBCC Equivalence",
                 "required": true
               },
               {
@@ -162,8 +182,8 @@
                 "required": true
               }
             ],
-            "application_deadline": "2027-07-10",
-            "fee_estimate_pkr": 190000
+            "application_deadline": "2027-06-25",
+            "fee_estimate_pkr": 195000
           }
         }
       ]
@@ -174,7 +194,13 @@
       "full_name": "Lahore University of Management Sciences",
       "location": "Lahore",
       "website": "https://lums.edu.pk",
-      "description": "Premier private research university known for business, economics, and computer science.",
+      "description": "Premier private research university known for business, economics, science, and computer science.",
+      "sources": [
+        {
+          "url": "https://lums.edu.pk",
+          "last_verified": "2026-09-02"
+        }
+      ],
       "programs": [
         {
           "id": "bs-cs",
@@ -184,11 +210,12 @@
             "qualification": [
               "FSc Pre-Engineering",
               "ICS",
-              "A-Levels"
+              "A-Levels (BBB minimum grade condition)"
             ],
             "minimum_aggregate": 70.0,
             "estimated_cutoff": 85.0,
-            "admission_test": "LUMS Common Admission Test (LCAT) / SAT",
+            "admission_test": "SAT / LCAT",
+            "notes": "SBASSE Subject Test also required for BS CS.",
             "required_documents": [
               {
                 "name": "FSc Transcript / A-Levels Equivalence",
@@ -199,25 +226,26 @@
                 "required": true
               },
               {
-                "name": "LCAT / SAT Score Report",
+                "name": "SAT / LCAT Score Report",
                 "required": true
               },
               {
-                "name": "Matriculation Certificate",
+                "name": "Matriculation Certificate / O-Level Equivalence",
                 "required": true
               },
               {
-                "name": "Statement of Purpose",
-                "required": false
+                "name": "Statement of Purpose & Teacher Recommendations",
+                "required": true
               }
             ],
-            "application_deadline": "2027-07-20",
-            "fee_estimate_pkr": 400000
+            "application_deadline": "2027-02-01",
+            "fee_estimate_pkr": 750000,
+            "fee_basis": "per semester"
           }
         },
         {
           "id": "bba",
-          "name": "BBA",
+          "name": "BBA (BSc Honors Management Science)",
           "duration": "4 years",
           "requirements": {
             "qualification": [
@@ -228,11 +256,11 @@
               "Equivalent"
             ],
             "minimum_aggregate": 65.0,
-            "estimated_cutoff": 80.0,
-            "admission_test": "LCAT / SAT",
+            "estimated_cutoff": 82.0,
+            "admission_test": "SAT / LCAT",
             "required_documents": [
               {
-                "name": "FSc / FA / A-Levels Transcript",
+                "name": "FSc / FA / A-Levels Equivalence",
                 "required": true
               },
               {
@@ -240,7 +268,7 @@
                 "required": true
               },
               {
-                "name": "LCAT / SAT Score Report",
+                "name": "SAT / LCAT Score Report",
                 "required": true
               },
               {
@@ -248,8 +276,9 @@
                 "required": true
               }
             ],
-            "application_deadline": "2027-07-20",
-            "fee_estimate_pkr": 420000
+            "application_deadline": "2027-02-01",
+            "fee_estimate_pkr": 730000,
+            "fee_basis": "per semester"
           }
         }
       ]
@@ -261,6 +290,12 @@
       "location": "Islamabad",
       "website": "https://comsats.edu.pk",
       "description": "Large public-sector university with campuses across Pakistan and strong IT programs.",
+      "sources": [
+        {
+          "url": "https://comsats.edu.pk",
+          "last_verified": "2026-09-02"
+        }
+      ],
       "programs": [
         {
           "id": "bs-cs",
@@ -269,12 +304,13 @@
           "requirements": {
             "qualification": [
               "FSc Pre-Engineering",
-              "ICS (Math + Physics)",
+              "ICS (Math + Physics / Computer)",
               "A-Levels (Math + Physics/Computing)"
             ],
             "minimum_aggregate": 50.0,
-            "estimated_cutoff": 78.0,
-            "admission_test": "NTS-NAT IE/ICS",
+            "estimated_cutoff": 84.0,
+            "admission_test": "NTS-NAT",
+            "notes": "COMSATS Special NAT also accepted.",
             "required_documents": [
               {
                 "name": "FSc Transcript / A-Levels Equivalence",
@@ -285,7 +321,7 @@
                 "required": true
               },
               {
-                "name": "Valid NTS-NAT IE/ICS Score Card",
+                "name": "Valid NTS-NAT Score Card",
                 "required": true
               },
               {
@@ -293,8 +329,8 @@
                 "required": true
               }
             ],
-            "application_deadline": "2027-08-05",
-            "fee_estimate_pkr": 120000
+            "application_deadline": "2027-07-30",
+            "fee_estimate_pkr": 135000
           }
         }
       ]
@@ -306,6 +342,12 @@
       "location": "Lahore",
       "website": "https://uet.edu.pk",
       "description": "Pakistan's oldest and one of the most respected engineering universities.",
+      "sources": [
+        {
+          "url": "https://uet.edu.pk",
+          "last_verified": "2026-09-02"
+        }
+      ],
       "programs": [
         {
           "id": "bs-ce",
@@ -317,7 +359,7 @@
               "A-Levels (Math + Physics + Chemistry)"
             ],
             "minimum_aggregate": 60.0,
-            "estimated_cutoff": 87.0,
+            "estimated_cutoff": 78.0,
             "admission_test": "ECAT (Engineering College Admission Test)",
             "required_documents": [
               {
@@ -341,19 +383,25 @@
                 "required": true
               }
             ],
-            "application_deadline": "2027-08-01",
+            "application_deadline": "2027-05-20",
             "fee_estimate_pkr": 110000
           }
         }
       ]
     },
     {
-      "id": "fast",
-      "name": "FAST",
-      "full_name": "FAST University",
-      "location": "Karachi",
-      "website": "https://nu.edu.pk",
-      "description": "Campus of FAST-NUCES offering computing and engineering programs.",
+      "id": "muet",
+      "name": "MUET",
+      "full_name": "Mehran University of Engineering and Technology",
+      "location": "Jamshoro",
+      "website": "https://www.muet.edu.pk",
+      "description": "Leading public sector engineering university based in Sindh, Pakistan.",
+      "sources": [
+        {
+          "url": "https://www.muet.edu.pk",
+          "last_verified": "2026-09-02"
+        }
+      ],
       "programs": [
         {
           "id": "bs-cs",
@@ -362,12 +410,12 @@
           "requirements": {
             "qualification": [
               "FSc Pre-Engineering",
-              "ICS (Math + Physics)",
-              "A-Levels"
+              "ICS (Math + Physics / General Science)",
+              "A-Levels (Math + Physics/Computing)"
             ],
             "minimum_aggregate": 60.0,
-            "estimated_cutoff": 87.0,
-            "admission_test": "NTS-NAT IE/ICS",
+            "estimated_cutoff": 72.0,
+            "admission_test": "MUET Pre-Admission Entry Test",
             "required_documents": [
               {
                 "name": "FSc Transcript / A-Levels Equivalence",
@@ -378,7 +426,7 @@
                 "required": true
               },
               {
-                "name": "Valid NTS-NAT IE/ICS Score Card",
+                "name": "MUET Entry Test Score Card",
                 "required": true
               },
               {
@@ -386,8 +434,8 @@
                 "required": true
               }
             ],
-            "application_deadline": "2027-07-15",
-            "fee_estimate_pkr": 150000
+            "application_deadline": "2027-08-15",
+            "fee_estimate_pkr": 60000
           }
         }
       ]
