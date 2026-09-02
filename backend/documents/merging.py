@@ -1,0 +1,175 @@
+"""Conflict-aware merging of extracted documents into a student profile."""
+from __future__ import annotations
+
+from collections import defaultdict
+from typing import Any
+
+from backend.documents.models import Conflict, ExtractedDocument, MergeProposal
+
+
+# Canonical categories that contain academic aggregate information.
+# When picking an aggregate, we only trust categories that represent the
+# student's latest secondary/intermediate result.
+ACADEMIC_CATEGORIES = {
+    "intermediate_transcript",
+    "matric_certificate",
+}
+
+
+def _unique_values(values: list[Any]) -> list[Any]:
+    """Return unique values preserving order."""
+    seen: set[Any] = set()
+    result: list[Any] = []
+    for v in values:
+        # Dictionaries are not hashable; use their string representation.
+        key = tuple(sorted(v.items())) if isinstance(v, dict) else v
+        if key not in seen:
+            seen.add(key)
+            result.append(v)
+    return result
+
+
+def _detect_conflicts(docs: list[ExtractedDocument]) -> list[Conflict]:
+    """Detect fields where documents disagree."""
+    field_values: dict[str, list[tuple[Any, str]]] = defaultdict(list)
+    for doc in docs:
+        for f in doc.fields:
+            if f.value is not None:
+                field_values[f.field].append((f.value, doc.filename))
+
+    conflicts: list[Conflict] = []
+    for field_name, entries in field_values.items():
+        if len(entries) < 2:
+            continue
+        values = [v for v, _ in entries]
+        unique = _unique_values(values)
+        if len(unique) > 1:
+            conflicts.append(
+                Conflict(
+                    field=field_name,
+                    values=unique,
+                    source_documents=[src for _, src in entries],
+                )
+            )
+    return conflicts
+
+
+def _pick_name(docs: list[ExtractedDocument]) -> str | None:
+    """Prefer names from the most reliable identity and academic documents."""
+    for preferred in ["intermediate_transcript", "matric_certificate", "cnic_bform"]:
+        for doc in docs:
+            if doc.canonical_category == preferred:
+                name = doc.field_value("name")
+                if name:
+                    return name
+    for doc in docs:
+        name = doc.field_value("name")
+        if name:
+            return name
+    return None
+
+
+def _pick_qualification(docs: list[ExtractedDocument]) -> str | None:
+    """Prefer intermediate-level qualification over matric/equivalent."""
+    order = ["intermediate_transcript"]
+    for preferred in order:
+        for doc in docs:
+            if doc.canonical_category == preferred:
+                q = doc.field_value("qualification")
+                if q:
+                    return q
+    for doc in docs:
+        q = doc.field_value("qualification")
+        if q:
+            return q
+    return None
+
+
+def _pick_board(docs: list[ExtractedDocument]) -> str | None:
+    """Use the board from the most academically-relevant document."""
+    for preferred in ["intermediate_transcript", "matric_certificate"]:
+        for doc in docs:
+            if doc.canonical_category == preferred:
+                b = doc.field_value("board")
+                if b:
+                    return b
+    for doc in docs:
+        b = doc.field_value("board")
+        if b:
+            return b
+    return None
+
+
+def _pick_aggregate(docs: list[ExtractedDocument], warnings: list[str]) -> float | None:
+    """Pick the aggregate from the latest academic document.
+
+    We avoid taking the max across all aggregates because a Matric percentage
+    should not silently overwrite an FSc aggregate.
+    """
+    aggregates: list[tuple[float, str, str | None]] = []
+    for doc in docs:
+        if doc.canonical_category in ACADEMIC_CATEGORIES:
+            val = doc.field_value("aggregate")
+            if isinstance(val, (int, float)):
+                aggregates.append((float(val), doc.filename, doc.canonical_category))
+
+    if not aggregates:
+        return None
+
+    # Prefer intermediate_transcript aggregate; if absent, fall back to matric.
+    intermediate = [a for a in aggregates if a[2] == "intermediate_transcript"]
+    if intermediate:
+        chosen = max(intermediate, key=lambda x: x[0])
+        return chosen[0]
+
+    matric = [a for a in aggregates if a[2] == "matric_certificate"]
+    if matric:
+        chosen = max(matric, key=lambda x: x[0])
+        return chosen[0]
+
+    # Should not reach here, but keep a safe fallback.
+    return max(aggregates, key=lambda x: x[0])[0]
+
+
+def merge_documents(docs: list[ExtractedDocument]) -> MergeProposal:
+    """Merge documents into a proposed student profile, detecting conflicts."""
+    warnings: list[str] = []
+    conflicts = _detect_conflicts(docs)
+
+    # Build a conflict-aware warning for the user.
+    for conflict in conflicts:
+        warnings.append(
+            f"Conflicting {conflict.field} values found: "
+            f"{', '.join(str(v) for v in conflict.values)}. "
+            "Please review on the Profile page."
+        )
+
+    documents: list[str] = []
+    for doc in docs:
+        label = doc.document_type
+        if doc.canonical_category and label not in documents:
+            documents.append(label)
+        elif not doc.canonical_category and label not in documents:
+            documents.append(label)
+
+    profile: dict[str, Any] = {
+        "name": _pick_name(docs) or "",
+        "qualification": _pick_qualification(docs),
+        "board": _pick_board(docs),
+        "aggregate": _pick_aggregate(docs, warnings),
+        "documents": documents,
+    }
+
+    # Surface a warning if no academic aggregate could be extracted.
+    if profile["aggregate"] is None and any(doc.field_value("aggregate") is not None for doc in docs):
+        warnings.append(
+            "Aggregate values were found but none were from a recognized academic transcript. "
+            "Please verify your aggregate on the Profile page."
+        )
+
+    return MergeProposal(
+        profile=profile,
+        documents=documents,
+        conflicts=conflicts,
+        warnings=warnings,
+    )

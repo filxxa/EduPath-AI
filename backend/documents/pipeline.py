@@ -1,0 +1,66 @@
+"""Pipeline orchestrator for document processing."""
+from __future__ import annotations
+
+from typing import Any
+
+from backend.documents.classification import classify_document
+from backend.documents.extraction import extract_text
+from backend.documents.fields import extract_fields
+from backend.documents.merging import merge_documents
+from backend.documents.models import ExtractedDocument, MergeProposal, ValidationResult
+from backend.documents.validation import validate_upload
+
+
+def process_upload(filename: str, content: bytes | None = None) -> ExtractedDocument:
+    """Run the full pipeline on a single uploaded file."""
+    validation = validate_upload(filename, content)
+
+    if not validation.valid or content is None:
+        return ExtractedDocument(
+            filename=filename,
+            document_type="Unsupported / Invalid File",
+            canonical_category=None,
+            validation=validation,
+            extraction_method="none",
+            raw_text="",
+            fields=[],
+            ocr_note=None,
+            is_scanned_pdf=None,
+        )
+
+    extraction = extract_text(filename, content)
+    raw_text = extraction["raw_text"]
+
+    classification = classify_document(filename, raw_text)
+    fields = extract_fields(filename, raw_text, classification["canonical_category"])
+
+    return ExtractedDocument(
+        filename=filename,
+        document_type=classification["document_type"],
+        canonical_category=classification["canonical_category"],
+        validation=validation,
+        extraction_method=extraction["extraction_method"],
+        raw_text=raw_text,
+        fields=fields,
+        ocr_note=extraction["ocr_note"],
+        is_scanned_pdf=extraction["is_scanned_pdf"],
+    )
+
+
+def process_uploads(uploads: list[tuple[str, bytes]]) -> list[ExtractedDocument]:
+    """Run the pipeline on multiple uploaded files."""
+    return [process_upload(filename, content) for filename, content in uploads]
+
+
+def propose_profile(docs: list[ExtractedDocument]) -> MergeProposal:
+    """Build a proposed profile from a list of extracted documents."""
+    return merge_documents(docs)
+
+
+def process_uploads_and_propose_profile(
+    uploads: list[tuple[str, bytes]],
+) -> tuple[list[ExtractedDocument], MergeProposal]:
+    """Convenience helper: process uploads and build a merge proposal."""
+    docs = process_uploads(uploads)
+    proposal = propose_profile(docs)
+    return docs, proposal

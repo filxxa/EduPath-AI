@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import streamlit as st
 
-from backend.parser import build_profile_from_parsed, parse_upload
+from backend.parser import build_profile_proposal, parse_upload
 from backend.profile import merge_profile
 from ui import init_session_state, inject_theme, nav_row, page_header, render_sidebar
 
@@ -38,7 +38,19 @@ if uploaded_files:
 
     st.markdown("### 📑 Parsing Results")
     for doc in parsed:
-        with st.expander(f"📄 {doc['filename']} — {doc['document_type']}"):
+        validation = doc.get("validation", {})
+        errors = validation.get("errors", [])
+        warnings = validation.get("warnings", [])
+
+        status_icon = "❌" if errors else "⚠️" if warnings else "📄"
+        with st.expander(f"{status_icon} {doc['filename']} — {doc['document_type']}"):
+            if errors:
+                for err in errors:
+                    st.error(err)
+            if warnings:
+                for warn in warnings:
+                    st.warning(warn)
+
             cols = st.columns(3)
             cols[0].metric("Qualification", doc.get("qualification") or "—")
             cols[1].metric("Board", doc.get("board") or "—")
@@ -47,7 +59,12 @@ if uploaded_files:
                 st.info(doc["ocr_note"])
 
     if st.button("Build Profile from Documents", type="primary", key="build_profile"):
-        auto_profile = build_profile_from_parsed(parsed)
+        proposal = build_profile_proposal(parsed)
+
+        for warning in proposal.get("warnings", []):
+            st.warning(warning)
+
+        auto_profile = proposal.get("profile", {})
         st.session_state["student_profile"] = merge_profile(
             st.session_state["student_profile"], auto_profile
         )
