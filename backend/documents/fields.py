@@ -135,12 +135,19 @@ def extract_name(text: str) -> str | None:
         r"\b(?:roll\s*(?:no|number)?|seat\s*(?:no|number)?|registration|enrollment|adm(?:ission)?(?:\s*no)?)\b",
         re.IGNORECASE,
     )
+    title_case_pattern = re.compile(r"\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+){1,3})\b")
+    all_caps_pattern = re.compile(r"\b([A-Z]{2,}(?:\s+[A-Z]{2,}){1,3})\b")
     for index, line in enumerate(lines):
         if header_keywords.search(line):
             for nearby_line in lines[max(0, index - 1) : index + 3]:
-                candidates = re.findall(r"\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+){1,3})\b", nearby_line)
+                candidates = title_case_pattern.findall(nearby_line)
                 for candidate in candidates:
                     name = _normalize_name(candidate)
+                    if name:
+                        return name
+                all_caps_candidates = all_caps_pattern.findall(nearby_line)
+                for candidate in all_caps_candidates:
+                    name = _normalize_name(candidate.title())
                     if name:
                         return name
     return None
@@ -202,7 +209,7 @@ def extract_qualification(text: str) -> str | None:
     """Map extracted qualification text to a standard label."""
     cleaned = _clean_text(text)
     for hint, value in QUALIFICATION_HINTS.items():
-        if hint in cleaned:
+        if re.search(rf"\b{re.escape(_clean_text(hint))}\b", cleaned):
             return value
     return None
 
@@ -350,6 +357,96 @@ def extract_test_score(text: str) -> dict[str, str] | None:
     return {"test": found_test, "score": score}
 
 
+_ROLL_NUMBER_LABEL = re.compile(
+    r"\b(?:roll\s*(?:no\.?|number)|seat\s*(?:no\.?|number)|registration\s*(?:no\.?|number))\b",
+    re.IGNORECASE,
+)
+
+
+def extract_roll_number(text: str) -> str | None:
+    """Extract a roll / seat / registration number from labeled lines.
+
+    Pakistani marksheets typically have patterns like:
+      ROLL NUMBER 123456
+      ROLL NO. 78901
+      SEAT NUMBER 45678
+    The value is the first sequence of digits (possibly with hyphens) after the label.
+    """
+    for line in text.splitlines():
+        if not _ROLL_NUMBER_LABEL.search(line):
+            continue
+        after_label = _ROLL_NUMBER_LABEL.split(line, maxsplit=1)[-1]
+        digits_match = re.search(r"[\d][\d\s\-/]{2,}", after_label)
+        if digits_match:
+            value = re.sub(r"[\s\-/]+", "", digits_match.group(0)).strip()
+            if 3 <= len(value) <= 15:
+                return value
+    return None
+
+
+def extract_obtained_marks(text: str) -> int | None:
+    """Extract total obtained marks from labeled lines.
+
+    Handles patterns like:
+      TOTAL OBTAINED MARKS: 535
+      MARKS OBTAINED: 535
+      TOTAL OBTAINED: 535
+    """
+    patterns = [
+        r"\btotal\s+obtained\s+marks?\s*[:=\-]?\s*(\d+)",
+        r"\bmarks?\s+obtained\s*[:=\-]?\s*(\d+)",
+        r"\btotal\s+obtained\s*[:=\-]?\s*(\d+)",
+    ]
+    for pattern in patterns:
+        for match in re.finditer(pattern, text, re.IGNORECASE):
+            value = int(match.group(1))
+            if 0 < value <= 1500:
+                return value
+    return None
+
+
+def extract_total_marks(text: str) -> int | None:
+    """Extract total marks from labeled lines.
+
+    Handles patterns like:
+      TOTAL MARKS: 700
+      TOTAL: 700
+    Must avoid matching 'TOTAL OBTAINED MARKS' — that is obtained, not total.
+    """
+    for line in text.splitlines():
+        if re.search(r"\bobtained\b", line, re.IGNORECASE):
+            continue
+        match = re.search(r"\btotal\s+marks?\s*[:=\-]?\s*(\d+)", line, re.IGNORECASE)
+        if match:
+            value = int(match.group(1))
+            if 0 < value <= 1500:
+                return value
+    for match in re.finditer(r"\btotal\s*[:=\-]\s*(\d{3,4})\b", text, re.IGNORECASE):
+        value = int(match.group(1))
+        if 0 < value <= 1500:
+            preceding = text[max(0, match.start() - 20):match.start()].lower()
+            if "obtained" not in preceding:
+                return value
+    return None
+
+
+_OCR_NUMERIC_CORRECTIONS = str.maketrans({
+    "O": "0", "o": "0", "D": "0",
+    "I": "1", "l": "1",
+    "S": "5", "s": "5",
+    "B": "8",
+    "G": "6", "g": "9",
+    "Z": "2", "z": "2",
+})
+
+
+def _correct_ocr_numeric(value: str) -> str:
+    """Fix common OCR misreads in numeric strings (O→0, I→1, S→5, etc.)."""
+    if not value or not any(c.isdigit() for c in value):
+        return value
+    return value.translate(_OCR_NUMERIC_CORRECTIONS)
+
+
 _KV_FIELD_MAP = {
     "name": ["name", "student name", "candidate name", "name of candidate"],
     "father_name": ["father", "father's name", "fathers name", "father name", "guardian"],
@@ -360,12 +457,21 @@ _KV_FIELD_MAP = {
 
 
 def _guess_key_value_fields(text: str) -> dict[str, str]:
-    """Fallback: scan for Key:Value patterns line-by-line when primary extraction fails."""
+    """Fallback: scan for key-value patterns line-by-line.
+
+    Handles both colon-separated ("Name: Ali") and space-separated
+    ("NAME OF CANDIDATE ALI HASSAN") layouts common in Pakistani marksheets.
+    """
     results: dict[str, str] = {}
     kv_pattern = re.compile(r"^\s*([^:\-\n]{2,40})\s*[:\-]\s*(.+?)\s*$")
+    space_kv_pattern = re.compile(
+        r"^\s*(name\s+of\s+candidate|father.s?\s*name|roll\s*(?:no\.?|number)|"
+        r"seat\s*(?:no\.?|number)|registration\s*(?:no\.?|number))\s+(.+?)\s*$",
+        re.IGNORECASE,
+    )
 
     for line in text.splitlines():
-        match = kv_pattern.match(line)
+        match = kv_pattern.match(line) or space_kv_pattern.match(line)
         if not match:
             continue
         key_raw = match.group(1).strip().lower()
@@ -503,8 +609,44 @@ def extract_fields(filename: str, text: str, canonical_category: str | None) -> 
             )
         )
 
+    roll_number = extract_roll_number(text)
+    if roll_number:
+        fields.append(
+            ExtractedField(
+                field="roll_number",
+                value=roll_number,
+                confidence=None,
+                source_document=source,
+                extraction_method="regex",
+            )
+        )
+
+    obtained_marks = extract_obtained_marks(text)
+    if obtained_marks is not None:
+        fields.append(
+            ExtractedField(
+                field="obtained_marks",
+                value=obtained_marks,
+                confidence=None,
+                source_document=source,
+                extraction_method="regex",
+            )
+        )
+
+    total_marks = extract_total_marks(text)
+    if total_marks is not None:
+        fields.append(
+            ExtractedField(
+                field="total_marks",
+                value=total_marks,
+                confidence=None,
+                source_document=source,
+                extraction_method="regex",
+            )
+        )
+
     extracted_keys = {f.field for f in fields}
-    fallback_candidates = {"name", "father_name", "board", "qualification"}
+    fallback_candidates = {"name", "father_name", "board", "qualification", "roll_number"}
     if fallback_candidates & extracted_keys != fallback_candidates:
         guessed = _guess_key_value_fields(text)
         for field_name, raw_value in guessed.items():
@@ -523,10 +665,13 @@ def extract_fields(filename: str, text: str, canonical_category: str | None) -> 
                 )
                 extracted_keys.add(field_name)
 
-    logger.debug(
-        "extract_fields: file=%s text_len=%d fields=%s",
+    fields = _validate_percentage_from_marks(fields)
+
+    logger.info(
+        "Field extraction: file=%s text_len=%d fields_extracted=%d fields=%s",
         filename,
         len(text),
+        len(fields),
         {f.field: f.value for f in fields},
     )
 
@@ -543,7 +688,67 @@ def _normalize_fallback_value(field_name: str, raw_value: str) -> Any:
         return extract_board(raw_value)
     if field_name == "qualification":
         return extract_qualification(raw_value)
+    if field_name == "roll_number":
+        corrected = _correct_ocr_numeric(raw_value)
+        digits = re.sub(r"[^\d]", "", corrected)
+        return digits if 3 <= len(digits) <= 15 else None
     return raw_value if raw_value else None
+
+
+def _validate_percentage_from_marks(fields: list[ExtractedField]) -> list[ExtractedField]:
+    """Recompute percentage from total_marks/obtained_marks when OCR digit is suspect.
+
+    OCR frequently misreads digits (e.g. "77" as "17"). When we have both the
+    raw marks and an OCR-extracted percentage, we can verify the percentage by
+    recomputing it. If the difference exceeds a threshold, we trust the
+    arithmetic over the OCR.
+    """
+    field_map = {f.field: f for f in fields}
+    total = field_map.get("total_marks")
+    obtained = field_map.get("obtained_marks")
+    pct_field = field_map.get("hssc_percentage") or field_map.get("ssc_percentage") or field_map.get("aggregate")
+
+    if total is None or obtained is None or pct_field is None:
+        return fields
+
+    total_val = total.value if isinstance(total.value, (int, float)) else None
+    obtained_val = obtained.value if isinstance(obtained.value, (int, float)) else None
+    pct_val = pct_field.value if isinstance(pct_field.value, (int, float)) else None
+
+    if total_val is None or obtained_val is None or pct_val is None:
+        return fields
+    if total_val <= 0:
+        return fields
+
+    computed = round((obtained_val / total_val) * 100, 2)
+    if abs(computed - pct_val) > 5.0:
+        logger.info(
+            "Percentage OCR mismatch: ocr=%.2f computed=%.2f (obtained=%d/total=%d) -- using computed",
+            pct_val, computed, obtained_val, total_val,
+        )
+        corrected_fields = []
+        for f in fields:
+            if f.field == pct_field.field:
+                corrected_fields.append(ExtractedField(
+                    field=f.field,
+                    value=computed,
+                    confidence=None,
+                    source_document=f.source_document,
+                    extraction_method="computed_from_marks",
+                ))
+            elif f.field == "aggregate":
+                corrected_fields.append(ExtractedField(
+                    field=f.field,
+                    value=computed,
+                    confidence=None,
+                    source_document=f.source_document,
+                    extraction_method="computed_from_marks",
+                ))
+            else:
+                corrected_fields.append(f)
+        return corrected_fields
+
+    return fields
 
 
 def _extract_group(text: str) -> str | None:

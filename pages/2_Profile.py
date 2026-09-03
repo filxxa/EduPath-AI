@@ -44,25 +44,30 @@ with st.container(border=True):
     with st.form("profile_form"):
         col1, col2 = st.columns(2)
         name = col1.text_input("Full Name", value=profile.get("name", ""))
-        qualification = col2.selectbox(
+        father_name = col2.text_input("Father's Name", value=profile.get("father_name") or "")
+        qualification = col1.selectbox(
             "Qualification",
             QUALIFICATIONS,
             index=_selectbox_index(QUALIFICATIONS, profile.get("qualification")),
         )
-        board = col1.selectbox(
+        board = col2.selectbox(
             "Board / Examination Authority",
             BOARDS,
             index=_selectbox_index(BOARDS, profile.get("board")),
         )
-        aggregate = col2.number_input(
+        aggregate = col1.number_input(
             "Aggregate / Percentage (%)",
             min_value=0.0,
             max_value=100.0,
             value=float(profile.get("aggregate") or 0.0),
             step=0.1,
         )
+        roll_number = col2.text_input(
+            "Roll Number",
+            value=profile.get("roll_number") or "",
+        )
 
-        st.markdown("#### 📊 Academic Breakdown (optional)")
+        st.markdown("#### Academic Breakdown (optional)")
         acol1, acol2 = st.columns(2)
         hssc_percentage = acol1.number_input(
             "HSSC / Intermediate Percentage (%)",
@@ -85,9 +90,20 @@ with st.container(border=True):
             GROUPS,
             index=_selectbox_index(GROUPS, profile.get("hssc_group")),
         )
-        roll_number = acol2.text_input(
-            "Roll Number",
-            value=profile.get("roll_number") or "",
+        mcol1, mcol2 = acol2.columns(2)
+        obtained_marks = mcol1.number_input(
+            "Obtained Marks",
+            min_value=0,
+            max_value=1500,
+            value=int(profile.get("obtained_marks") or 0),
+            step=1,
+        )
+        total_marks = mcol2.number_input(
+            "Total Marks",
+            min_value=0,
+            max_value=1500,
+            value=int(profile.get("total_marks") or 0),
+            step=1,
         )
 
         notes = st.text_area("Notes", value=profile.get("notes", ""))
@@ -96,6 +112,7 @@ with st.container(border=True):
         if save:
             updated = {
                 "name": name,
+                "father_name": father_name or None,
                 "qualification": qualification,
                 "board": board,
                 "aggregate": aggregate,
@@ -103,6 +120,8 @@ with st.container(border=True):
                 "ssc_percentage": ssc_percentage or None,
                 "hssc_group": hssc_group,
                 "roll_number": roll_number or None,
+                "obtained_marks": obtained_marks or None,
+                "total_marks": total_marks or None,
                 "notes": notes,
             }
             update_profile(updated, source="manual")

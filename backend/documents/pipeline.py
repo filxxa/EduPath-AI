@@ -1,12 +1,16 @@
 """Pipeline orchestrator for document processing."""
 from __future__ import annotations
 
+import logging
+
 from backend.documents.classification import classify_document
 from backend.documents.extraction import extract_text
 from backend.documents.fields import extract_fields
 from backend.documents.merging import merge_documents
 from backend.documents.models import ExtractedDocument, MergeProposal
 from backend.documents.validation import validate_upload
+
+logger = logging.getLogger(__name__)
 
 
 def process_upload(filename: str, content: bytes | None = None) -> ExtractedDocument:
@@ -32,11 +36,18 @@ def process_upload(filename: str, content: bytes | None = None) -> ExtractedDocu
 
     raw_text = extraction["raw_text"]
     classification = classify_document(filename, raw_text)
-    fields = (
-        extract_fields(filename, raw_text, classification["canonical_category"])
-        if validation.valid
-        else []
+    logger.info(
+        f"Pipeline [{filename}]: method={extraction['extraction_method']}, "
+        f"text_len={len(raw_text)}, category={classification['canonical_category']}, "
+        f"validation_valid={validation.valid}"
     )
+
+    if raw_text:
+        fields = extract_fields(filename, raw_text, classification["canonical_category"])
+        logger.info(f"Pipeline [{filename}]: extracted {len(fields)} fields")
+    else:
+        fields = []
+        logger.warning(f"Pipeline [{filename}]: no raw_text — skipping field extraction")
 
     return ExtractedDocument(
         filename=filename,
@@ -51,6 +62,7 @@ def process_upload(filename: str, content: bytes | None = None) -> ExtractedDocu
         ocr_confidence=extraction["ocr_confidence"],
         page_count=extraction["page_count"],
         pages_processed=extraction["pages_processed"],
+        ocr_attempts=extraction.get("ocr_attempts", []),
     )
 
 

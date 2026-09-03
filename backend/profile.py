@@ -31,6 +31,7 @@ ELIGIBILITY_FIELDS: tuple[str, ...] = (
 def default_profile() -> dict[str, Any]:
     return {
         "name": "",
+        "father_name": None,
         "qualification": None,
         "board": None,
         "aggregate": None,
@@ -38,6 +39,8 @@ def default_profile() -> dict[str, Any]:
         "hssc_percentage": None,
         "hssc_group": None,
         "roll_number": None,
+        "total_marks": None,
+        "obtained_marks": None,
         "subjects": [],
         "target_university": None,
         "target_program": None,

@@ -21,6 +21,7 @@ def _result(
     pages_processed: int | None = None,
     errors: list[str] | None = None,
     warnings: list[str] | None = None,
+    ocr_attempts: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     return {
         "raw_text": raw_text,
@@ -32,6 +33,7 @@ def _result(
         "pages_processed": pages_processed,
         "errors": errors or [],
         "warnings": warnings or [],
+        "ocr_attempts": ocr_attempts or [],
     }
 
 
@@ -58,6 +60,17 @@ def extract_text(filename: str, content: bytes) -> dict[str, Any]:
 
     if suffix in IMAGE_EXTENSIONS:
         ocr = extract_image_ocr(content)
+        attempts_data = [
+            {
+                "variant": a.preprocessing_variant,
+                "psm": a.psm_mode,
+                "chars": a.char_count,
+                "words": a.word_count,
+                "confidence": a.confidence,
+                "preview": a.text_preview,
+            }
+            for a in ocr.attempts
+        ]
         if ocr.status == "success":
             warnings = [ocr.message] if ocr.message else []
             return _result(
@@ -66,6 +79,7 @@ def extract_text(filename: str, content: bytes) -> dict[str, Any]:
                 ocr_note=_ocr_note("image_ocr", ocr.confidence),
                 ocr_confidence=ocr.confidence,
                 warnings=warnings,
+                ocr_attempts=attempts_data,
             )
         if ocr.status == "empty":
             note = ocr.message or (
@@ -78,6 +92,7 @@ def extract_text(filename: str, content: bytes) -> dict[str, Any]:
                 ocr_note=note,
                 ocr_confidence=ocr.confidence,
                 warnings=[note],
+                ocr_attempts=attempts_data,
             )
         if ocr.status == "unavailable":
             note = (

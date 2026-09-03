@@ -2,9 +2,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+import logging
 from typing import Any
 
 from backend.documents.ocr import MAX_IMAGE_PIXELS, extract_image_ocr
+
+logger = logging.getLogger(__name__)
 
 try:
     import pymupdf as fitz
@@ -75,38 +78,50 @@ def extract_pdf(content: bytes) -> PdfExtraction:
         needs_ocr = False
 
         for page_number in range(pages_processed):
-            page = document.load_page(page_number)
-            page_text = page.get_text("text").strip()
-            if len(page_text) >= MIN_TEXT_LAYER_CHARS:
-                chunks.append(page_text)
-                text_layer_pages += 1
-                continue
-
-            needs_ocr = True
-            if ocr_attempts >= MAX_OCR_PAGES:
-                continue
-
-            ocr_attempts += 1
-            pixmap = page.get_pixmap(dpi=OCR_DPI, alpha=False)
-            if pixmap.width * pixmap.height > MAX_IMAGE_PIXELS:
-                ocr_errors.append(
-                    f"Page {page_number + 1} exceeds the image size limit for OCR."
+            try:
+                page = document.load_page(page_number)
+                page_text = page.get_text("text").strip()
+                logger.debug(
+                    f"PDF page {page_number + 1}: text_layer={len(page_text)} chars"
                 )
-                continue
+                if len(page_text) >= MIN_TEXT_LAYER_CHARS:
+                    chunks.append(page_text)
+                    text_layer_pages += 1
+                    continue
 
-            ocr_result = extract_image_ocr(pixmap.tobytes("png"))
-            if ocr_result.status == "success":
-                ocr_pages += 1
-                if ocr_result.raw_text:
-                    chunks.append(ocr_result.raw_text)
-                if ocr_result.confidence is not None and ocr_result.word_count:
-                    ocr_scores.append((ocr_result.confidence, ocr_result.word_count))
-                if ocr_result.message:
-                    result.warnings.append(ocr_result.message)
-            elif ocr_result.status == "unavailable":
-                ocr_unavailable = True
-            else:
-                ocr_errors.append(ocr_result.message or f"OCR could not process page {page_number + 1}.")
+                needs_ocr = True
+                if ocr_attempts >= MAX_OCR_PAGES:
+                    continue
+
+                ocr_attempts += 1
+                pixmap = page.get_pixmap(dpi=OCR_DPI, alpha=False)
+                if pixmap.width * pixmap.height > MAX_IMAGE_PIXELS:
+                    ocr_errors.append(
+                        f"Page {page_number + 1} exceeds the image size limit for OCR."
+                    )
+                    continue
+
+                ocr_result = extract_image_ocr(pixmap.tobytes("png"))
+                logger.debug(
+                    f"PDF page {page_number + 1} OCR: status={ocr_result.status}, "
+                    f"text_len={len(ocr_result.raw_text)}"
+                )
+                if ocr_result.status == "success":
+                    ocr_pages += 1
+                    if ocr_result.raw_text:
+                        chunks.append(ocr_result.raw_text)
+                    if ocr_result.confidence is not None and ocr_result.word_count:
+                        ocr_scores.append((ocr_result.confidence, ocr_result.word_count))
+                    if ocr_result.message:
+                        result.warnings.append(ocr_result.message)
+                elif ocr_result.status == "unavailable":
+                    ocr_unavailable = True
+                else:
+                    ocr_errors.append(ocr_result.message or f"OCR could not process page {page_number + 1}.")
+            except Exception as e:
+                logger.warning(f"PDF page {page_number + 1} processing failed: {e}")
+                ocr_errors.append(f"Page {page_number + 1} could not be processed.")
+                continue
 
         if needs_ocr and ocr_attempts >= MAX_OCR_PAGES:
             scanned_pages = pages_processed - text_layer_pages
@@ -142,8 +157,13 @@ def extract_pdf(content: bytes) -> PdfExtraction:
 
         if ocr_errors and result.raw_text:
             result.warnings.extend(ocr_errors)
+        logger.info(
+            f"PDF extraction: method={result.extraction_method}, "
+            f"text_len={len(result.raw_text)}, pages={text_layer_pages}+{ocr_pages}"
+        )
         return result
-    except Exception:
+    except Exception as e:
+        logger.error(f"PDF extraction failed: {e}")
         return PdfExtraction(errors=["This PDF appears corrupt or unreadable."])
     finally:
         if document is not None:

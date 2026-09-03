@@ -8,8 +8,10 @@ from backend.documents.fields import (
     extract_father_name,
     extract_fields,
     extract_name,
+    extract_obtained_marks,
     extract_qualification,
     extract_test_score,
+    extract_total_marks,
 )
 from backend.documents.ocr import OcrResult
 from backend.documents.pdf import PdfExtraction
@@ -317,3 +319,39 @@ def test_debug_logging_emits_extraction_summary(
 
     assert any("test.pdf" in record.message for record in caplog.records)
     assert any("text_len=" in record.message for record in caplog.records)
+
+
+def test_extract_obtained_marks_from_labeled_line() -> None:
+    text = "TOTAL OBTAINED MARKS: 535\nTOTAL MARKS: 700"
+    assert extract_obtained_marks(text) == 535
+
+
+def test_extract_obtained_marks_various_labels() -> None:
+    assert extract_obtained_marks("Marks Obtained: 450") == 450
+    assert extract_obtained_marks("TOTAL OBTAINED: 620") == 620
+
+
+def test_extract_total_marks_from_labeled_line() -> None:
+    text = "TOTAL OBTAINED MARKS: 535\nTOTAL MARKS: 700"
+    assert extract_total_marks(text) == 700
+
+
+def test_extract_total_marks_does_not_match_obtained_line() -> None:
+    text = "TOTAL OBTAINED MARKS: 535"
+    assert extract_total_marks(text) is None
+
+
+def test_extract_fields_includes_marks() -> None:
+    text = (
+        "BOARD OF INTERMEDIATE EDUCATION LAHORE\n"
+        "NAME: ALI HASSAN\n"
+        "FSc PRE-ENGINEERING\n"
+        "TOTAL OBTAINED MARKS: 535\n"
+        "TOTAL MARKS: 700\n"
+        "AGGREGATE: 76.43%"
+    )
+    fields = extract_fields("hssc.pdf", text, "intermediate_transcript")
+    field_map = {f.field: f.value for f in fields}
+
+    assert field_map["obtained_marks"] == 535
+    assert field_map["total_marks"] == 700

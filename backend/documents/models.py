@@ -67,6 +67,7 @@ class ExtractedDocument:
     ocr_confidence: float | None = None
     page_count: int | None = None
     pages_processed: int | None = None
+    ocr_attempts: list[dict[str, Any]] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
         """Serialize to a dict that preserves the legacy parser contract."""
@@ -101,6 +102,7 @@ class ExtractedDocument:
             "ocr_confidence": self.ocr_confidence,
             "page_count": self.page_count,
             "pages_processed": self.pages_processed,
+            "ocr_attempts": self.ocr_attempts,
             **legacy_fields,
         }
 
@@ -124,6 +126,7 @@ class ExtractedDocument:
             ocr_confidence=data.get("ocr_confidence"),
             page_count=data.get("page_count"),
             pages_processed=data.get("pages_processed"),
+            ocr_attempts=data.get("ocr_attempts", []),
         )
 
     def field_value(self, name: str) -> Any:

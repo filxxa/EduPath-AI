@@ -44,9 +44,14 @@ def test_merges_one_document_into_a_profile() -> None:
 
     assert proposal.profile == {
         "name": "Ali Hassan",
+        "father_name": None,
         "qualification": "FSc Pre-Engineering",
         "board": "BISE Lahore",
         "aggregate": 88.4,
+        "total_marks": None,
+        "obtained_marks": None,
+        "roll_number": None,
+        "hssc_group": None,
         "hssc_percentage": None,
         "ssc_percentage": None,
         "test_scores": {},
@@ -160,3 +165,83 @@ def test_excludes_invalid_and_unclassified_documents_from_profile_presence() -> 
 
     assert proposal.documents == []
     assert proposal.profile["documents"] == []
+
+
+def test_carries_father_name_through_merge() -> None:
+    document = make_document(
+        "hssc.txt",
+        "Academic Transcript (FSc/Intermediate)",
+        "intermediate_transcript",
+        name="Ali Hassan",
+        father_name="Muhammad Hassan",
+    )
+
+    proposal = merge_documents([document])
+
+    assert proposal.profile["father_name"] == "Muhammad Hassan"
+
+
+def test_carries_roll_number_through_merge() -> None:
+    document = make_document(
+        "hssc.txt",
+        "Academic Transcript (FSc/Intermediate)",
+        "intermediate_transcript",
+        roll_number="789012",
+    )
+
+    proposal = merge_documents([document])
+
+    assert proposal.profile["roll_number"] == "789012"
+
+
+def test_carries_hssc_group_through_merge() -> None:
+    document = make_document(
+        "hssc.txt",
+        "Academic Transcript (FSc/Intermediate)",
+        "intermediate_transcript",
+        hssc_group="Pre-Engineering",
+    )
+
+    proposal = merge_documents([document])
+
+    assert proposal.profile["hssc_group"] == "Pre-Engineering"
+
+
+def test_carries_total_and_obtained_marks_through_merge() -> None:
+    document = make_document(
+        "hssc.txt",
+        "Academic Transcript (FSc/Intermediate)",
+        "intermediate_transcript",
+        total_marks=700,
+        obtained_marks=535,
+    )
+
+    proposal = merge_documents([document])
+
+    assert proposal.profile["total_marks"] == 700
+    assert proposal.profile["obtained_marks"] == 535
+
+
+def test_prefers_intermediate_transcript_for_identity_fields() -> None:
+    intermediate = make_document(
+        "hssc.txt",
+        "Academic Transcript (FSc/Intermediate)",
+        "intermediate_transcript",
+        father_name="Intermediate Father",
+        roll_number="111222",
+        hssc_group="Pre-Medical",
+    )
+    matric = make_document(
+        "matric.txt",
+        "Matriculation Certificate",
+        "matric_certificate",
+        father_name="Matric Father",
+        roll_number="999888",
+        hssc_group="General Science",
+    )
+
+    proposal = merge_documents([matric, intermediate])
+
+    assert proposal.profile["father_name"] == "Intermediate Father"
+    assert proposal.profile["roll_number"] == "111222"
+    assert proposal.profile["hssc_group"] == "Pre-Medical"

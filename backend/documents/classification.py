@@ -84,6 +84,8 @@ CONTENT_HINTS: dict[str, list[str]] = {
         "matric",
         "10th class",
         "grade 10",
+        "board of secondary",
+        "marks obtained",
     ],
     "intermediate_transcript": [
         "higher secondary school certificate",
@@ -96,6 +98,10 @@ CONTENT_HINTS: dict[str, list[str]] = {
         "alevel",
         "gce",
         "grade 12",
+        "board of intermediate",
+        "marks obtained",
+        "total marks",
+        "candidate",
     ],
     "cnic_bform": [
         "national identity card",
@@ -158,16 +164,16 @@ def _score_hints(text: str, hints: dict[str, list[str]]) -> dict[str, int]:
 
 
 def classify_document(filename: str, content: str = "") -> dict[str, Any]:
-    """Classify a document and return category + human-readable label.
+    """Classify a document using filename hints first, then content hints.
 
-    Returns a dict with keys:
-      - canonical_category: str | None
-      - document_type: str
-      - method: "filename" | "content" | "unknown"
+    Filename-based classification takes precedence when the filename contains
+    informative hints (e.g. "fsc_transcript.pdf"). When the filename is generic
+    (e.g. "scan_001.pdf", "image.png"), content-based classification is used
+    instead, looking for marksheet indicators like "board of intermediate",
+    "marks obtained", "candidate", etc.
     """
     name_lower = Path(filename).name.lower()
 
-    # 1. Filename-based classification.
     filename_scores = _score_hints(name_lower, FILENAME_HINTS)
     best_filename = max(filename_scores, key=filename_scores.get, default=None)
     if best_filename and filename_scores[best_filename] > 0:
@@ -177,7 +183,6 @@ def classify_document(filename: str, content: str = "") -> dict[str, Any]:
             "method": "filename",
         }
 
-    # 2. Content-based classification (if no filename match).
     if content:
         content_scores = _score_hints(content, CONTENT_HINTS)
         best_content = max(content_scores, key=content_scores.get, default=None)
@@ -188,7 +193,6 @@ def classify_document(filename: str, content: str = "") -> dict[str, Any]:
                 "method": "content",
             }
 
-    # 3. Fallback.
     return {
         "canonical_category": None,
         "document_type": "Supporting Document",

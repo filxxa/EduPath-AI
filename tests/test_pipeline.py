@@ -8,6 +8,7 @@ from backend.documents.pipeline import (
     process_upload,
     process_uploads,
     process_uploads_and_propose_profile,
+    propose_profile,
 )
 
 try:
@@ -84,7 +85,9 @@ def test_process_upload_propagates_extraction_metadata_and_errors(monkeypatch) -
     assert document.validation.errors == ["OCR could not read all content."]
     assert document.validation.warnings == ["Verify OCR output."]
     assert document.ocr_confidence == 85.0
-    assert document.fields == []
+    assert len(document.fields) == 1
+    assert document.fields[0].field == "name"
+    assert document.fields[0].value == "Ali Hassan"
 
 
 def test_processes_uploads_and_builds_profile_proposal() -> None:
@@ -290,3 +293,123 @@ def test_bytesio_seek_before_getvalue_preserves_content() -> None:
 
     assert result.field_value("name") == "Sara Khan"
     assert result.field_value("aggregate") == 82.5
+
+
+@pytest.mark.skipif(fitz is None, reason="PyMuPDF is not installed")
+@pytest.mark.skipif(Image is None, reason="PIL is not installed")
+@pytest.mark.skipif(not ocr.tesseract_available(), reason="English Tesseract is unavailable")
+def test_end_to_end_multi_document_pipeline_with_merged_profile() -> None:
+    """Full pipeline: scanned PDF + text documents → OCR → extraction → classification → merged profile."""
+    assert Image is not None
+    assert ImageDraw is not None
+
+    width, height = 1700, 2200
+    img = Image.new("RGB", (width, height), "white")
+    draw = ImageDraw.Draw(img)
+
+    try:
+        font = ImageFont.truetype("arial.ttf", 42)
+    except Exception:
+        font = ImageFont.load_default()
+
+    lines = [
+        "BOARD OF INTERMEDIATE AND SECONDARY EDUCATION LAHORE",
+        "HIGHER SECONDARY SCHOOL CERTIFICATE (ANNUAL EXAMINATION 2024)",
+        "",
+        "Name of Candidate: FATIMA ABBAS",
+        "Father's Name: GHULAM ABBAS",
+        "Roll Number: 789012",
+        "Institution: PUNJAB COLLEGE LAHORE",
+        "",
+        "Group: FSc Pre-Engineering",
+        "",
+        "Subject                        Marks Obtained    Total Marks",
+        "English                            85              100",
+        "Urdu                               80              100",
+        "Islamic Studies                    45               50",
+        "Pakistan Studies                   46               50",
+        "Physics                            92              100",
+        "Chemistry                          90              100",
+        "Mathematics                        97              100",
+        "",
+        "Total Obtained Marks: 535",
+        "Total Marks: 700",
+        "Aggregate Percentage: 76.43%",
+    ]
+
+    y = 80
+    for line in lines:
+        draw.text((80, y), line, fill="black", font=font)
+        y += 62
+
+    pdf_bytes = io.BytesIO()
+    img.save(pdf_bytes, format="PDF", resolution=200.0)
+
+    matric_text = (
+        "BOARD OF INTERMEDIATE AND SECONDARY EDUCATION KARACHI\n"
+        "SECONDARY SCHOOL CERTIFICATE (ANNUAL EXAMINATION 2022)\n"
+        "\n"
+        "Name of Candidate: FATIMA ABBAS\n"
+        "Father's Name: GHULAM ABBAS\n"
+        "Roll Number: 456789\n"
+        "\n"
+        "Total Obtained Marks: 980\n"
+        "Total Marks: 1100\n"
+        "Aggregate Percentage: 89.09%\n"
+    )
+
+    nat_text = (
+        "National Aptitude Test (NAT) Score Card\n"
+        "Candidate Name: Fatima Abbas\n"
+        "Test Date: 2024-06-15\n"
+        "Score: 92\n"
+    )
+
+    uploads = [
+        ("hssc_marksheet_scanned.pdf", pdf_bytes.getvalue()),
+        ("matric_result.txt", matric_text.encode("utf-8")),
+        ("nat_score.txt", nat_text.encode("utf-8")),
+    ]
+
+    docs = process_uploads(uploads)
+
+    assert len(docs) == 3
+
+    hssc_doc = next(d for d in docs if d.filename == "hssc_marksheet_scanned.pdf")
+    matric_doc = next(d for d in docs if d.filename == "matric_result.txt")
+    nat_doc = next(d for d in docs if d.filename == "nat_score.txt")
+
+    assert hssc_doc.canonical_category == "intermediate_transcript"
+    assert hssc_doc.extraction_method == "pdf_ocr"
+    assert hssc_doc.is_scanned_pdf is True
+    assert hssc_doc.validation.valid
+    assert hssc_doc.field_value("name") is not None
+    assert hssc_doc.field_value("aggregate") is not None
+    assert hssc_doc.ocr_confidence is not None
+    assert hssc_doc.ocr_confidence > 50.0
+
+    assert matric_doc.canonical_category == "matric_certificate"
+    assert matric_doc.extraction_method == "text"
+    assert matric_doc.field_value("name") == "Fatima Abbas"
+    assert matric_doc.field_value("aggregate") == 89.09
+
+    assert nat_doc.canonical_category == "entry_test_score"
+    assert nat_doc.extraction_method == "text"
+    test_score = nat_doc.field_value("test_score")
+    assert isinstance(test_score, dict)
+    assert test_score["test"] == "NAT"
+    assert test_score["score"] == "92"
+
+    proposal = propose_profile(docs)
+
+    profile = proposal.profile
+    assert profile.get("name") is not None
+    assert profile.get("hssc_percentage") is not None
+    assert profile.get("ssc_percentage") is not None
+    test_scores = profile.get("test_scores")
+    assert test_scores is not None
+    assert "NAT" in test_scores
+    assert len(proposal.conflicts) > 0
+    conflict_fields = {c.field for c in proposal.conflicts}
+    assert "board" in conflict_fields
+    assert "aggregate" in conflict_fields

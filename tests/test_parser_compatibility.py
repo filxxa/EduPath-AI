@@ -27,9 +27,14 @@ def test_build_profile_from_parsed_returns_legacy_profile() -> None:
 
     assert profile == {
         "name": "Ali Hassan",
+        "father_name": None,
         "qualification": "FSc Pre-Engineering",
         "board": "BISE Lahore",
         "aggregate": 88.4,
+        "total_marks": None,
+        "obtained_marks": None,
+        "roll_number": None,
+        "hssc_group": "Pre-Engineering",
         "hssc_percentage": 88.4,
         "ssc_percentage": None,
         "test_scores": {},
