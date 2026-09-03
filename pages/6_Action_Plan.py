@@ -115,14 +115,17 @@ st.divider()
 
 with st.container(border=True):
     st.markdown("### Program Snapshot")
-    fee_raw = prog.get("requirements", {}).get("fee_estimate_pkr", "N/A")
-    fee_display = f"PKR {fee_raw:,}" if isinstance(fee_raw, (int, float)) else f"PKR {fee_raw}"
+    reqs = prog.get("requirements", {})
+    fee_raw = reqs.get("fee_estimate_pkr")
+    fee_display = f"PKR {fee_raw:,}" if isinstance(fee_raw, (int, float)) else "PKR N/A"
+    deadline = reqs.get("application_deadline") or "N/A"
+    test = reqs.get("admission_test") or "N/A"
     st.markdown(
         f"""
         <div class="ep-list-item">🏫 University: <strong>{uni['name']}</strong></div>
         <div class="ep-list-item">🎓 Program: <strong>{prog['name']}</strong></div>
-        <div class="ep-list-item">📅 Deadline: <strong>{prog.get('requirements', {}).get('application_deadline', 'N/A')}</strong></div>
-        <div class="ep-list-item">📝 Admission Test: <strong>{prog.get('requirements', {}).get('admission_test', 'N/A')}</strong></div>
+        <div class="ep-list-item">📅 Deadline: <strong>{deadline}</strong></div>
+        <div class="ep-list-item">📝 Admission Test: <strong>{test}</strong></div>
         <div class="ep-list-item">💰 Estimated Fee: <strong>{fee_display}</strong></div>
         """,
         unsafe_allow_html=True,

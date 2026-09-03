@@ -1,22 +1,39 @@
 # FAST-NUCES — Overview
 
 Full name: FAST National University of Computer and Emerging Sciences.
-Location: Islamabad.
+Location: Multiple campuses.
 Website: https://nu.edu.pk.
 
 ## Description
 
-One of Pakistan's leading institutions for computing and engineering education.
+National university with undergraduate offerings in computing, engineering, business and analytics across its campuses.
 
 ## Programs Offered
 
-- BS Computer Science (bs-cs, 4 years)
-- BS Electrical Engineering (bs-ee, 4 years)
+- Bachelor of Science (Civil Engineering) (bachelor-of-science-civil-engineering, 4 years)
+- Bachelor of Science (Computer Engineering) (bachelor-of-science-computer-engineering, 4 years)
+- Bachelor of Science (Electrical Engineering) (bachelor-of-science-electrical-engineering, 4 years)
+- Bachelor of Science (Artificial Intelligence) (bachelor-of-science-artificial-intelligence, 4 years)
+- Bachelor of Science (Computer Science) (bachelor-of-science-computer-science, 4 years)
+- Bachelor of Science (Cyber Security) (bachelor-of-science-cyber-security, 4 years)
+- Bachelor of Science (Data Science) (bachelor-of-science-data-science, 4 years)
+- Bachelor of Science (Software Engineering) (bachelor-of-science-software-engineering, 4 years)
+- Bachelor of Business Administration (bachelor-of-business-administration, 4 years)
+- Bachelor of Science (Accounting and Finance) (bachelor-of-science-accounting-and-finance, 4 years)
+- Bachelor of Science (Business Analytics) (bachelor-of-science-business-analytics, 4 years)
+- Bachelor of Science (Financial Technology) (bachelor-of-science-financial-technology, 4 years)
 
 ## Sources and Verification
 
-- https://nu.edu.pk (last verified 2026-09-02)
+- https://www.nu.edu.pk/Admissions/ProgramOffered (last verified 2026-09-04)
+- https://www.nu.edu.pk/Admissions/EligibilityCriteria (last verified 2026-09-04)
+- https://nu.edu.pk/admissions/Schedule (last verified 2026-09-04)
+- https://pwr.nu.edu.pk/pages/fee-structure (last verified 2026-09-04)
+
+## Data Notes
+
+Current official catalog lists 12 undergraduate programs. Program-specific campus availability should be read from the official Programs Offered page rather than inferred from the national catalog alone.
 
 ## Disclaimer
 
-Admission policies change. Always confirm critical details on the official university website before applying.
+This dataset is a decision-support corpus, not official university verification. Where an institution did not publish a single program-specific numeric threshold/cutoff/date in the sources reviewed, the field is left null or a conservative baseline is used only where the institution publishes a general minimum. Always confirm the final application details on the official university portal.

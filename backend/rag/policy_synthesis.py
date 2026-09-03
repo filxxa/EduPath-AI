@@ -37,15 +37,19 @@ def _build_program_text(program: dict[str, Any], university: dict[str, Any]) -> 
     out += f"Program duration: {program.get('duration', '(unknown)')}.\n\n"
 
     out += _section("Eligibility", quals)
+    min_agg = reqs.get("minimum_aggregate")
+    cutoff = reqs.get("estimated_cutoff")
+    formula = reqs.get("aggregate_formula")
+    test = reqs.get("admission_test")
     out += _section(
         "Aggregate",
-        f"Minimum aggregate: {reqs.get('minimum_aggregate', '(unknown)')}%.\n"
-        f"Estimated merit cutoff: {reqs.get('estimated_cutoff', '(unknown)')}%.\n"
-        f"Aggregate formula: {reqs.get('aggregate_formula', '(not specified)')}.",
+        f"Minimum aggregate: {min_agg if min_agg is not None else '(unknown)'}%.\n"
+        f"Estimated merit cutoff: {cutoff if cutoff is not None else '(unknown)'}%.\n"
+        f"Aggregate formula: {formula or '(not specified)'}.",
     )
     out += _section(
         "Admission Test",
-        f"{reqs.get('admission_test', '(not specified)')}.",
+        f"{test or '(not specified)'}.",
     )
     out += _section("Required Documents", docs)
 

@@ -1,4 +1,4 @@
-# UET — Overview
+# UET Lahore — Overview
 
 Full name: University of Engineering and Technology, Lahore.
 Location: Lahore.
@@ -6,16 +6,66 @@ Website: https://uet.edu.pk.
 
 ## Description
 
-Pakistan's oldest and one of the most respected engineering universities.
+Engineering and technology university with a large Lahore catalog plus programmes at KSK, Faisalabad, Narowal and RCET Gujranwala.
 
 ## Programs Offered
 
-- BS Civil Engineering (bs-ce, 4 years)
+- Architectural Engineering (architectural-engineering, 4 years)
+- Architecture (architecture, 5 years)
+- Artificial Intelligence (artificial-intelligence, 4 years)
+- Automotive Engineering (automotive-engineering, 4 years)
+- Business Data Analytics (business-data-analytics, 4 years)
+- Chemical Engineering (chemical-engineering, 4 years)
+- City & Regional Planning (city-regional-planning, 4 years)
+- Civil Engineering (civil-engineering, 4 years)
+- Computer Engineering (PEC) (computer-engineering-pec, 4 years)
+- Computer Science (computer-science, 4 years)
+- Cyber Security (cyber-security, 4 years)
+- Data Science (data-science, 4 years)
+- Electrical Engineering (electrical-engineering, 4 years)
+- Environmental Engineering (environmental-engineering, 4 years)
+- Geological Engineering (geological-engineering, 4 years)
+- Industrial & Manufacturing Engineering (industrial-manufacturing-engineering, 4 years)
+- Mechanical Engineering (mechanical-engineering, 4 years)
+- Mechatronics and Control Engineering (mechatronics-and-control-engineering, 4 years)
+- Metallurgical & Materials Engineering (metallurgical-materials-engineering, 4 years)
+- Mining Engineering (mining-engineering, 4 years)
+- Petroleum and Gas Engineering (petroleum-and-gas-engineering, 4 years)
+- Polymer Engineering (polymer-engineering, 4 years)
+- Product and Industrial Design (product-and-industrial-design, 4 years)
+- Robotics and Intelligent Systems (robotics-and-intelligent-systems, 4 years)
+- Software Engineering (software-engineering, 4 years)
+- Transportation Engineering (transportation-engineering, 4 years)
+- Information Systems Technology (information-systems-technology, 4 years)
+- Applied Computing (applied-computing, 4 years)
+- Gaming & Animation (gaming-animation, 4 years)
+- Business Administration (business-administration, 4 years)
+- Business Information Technology (business-information-technology, 4 years)
+- Business Analytics (business-analytics, 4 years)
+- Chemistry (chemistry, 4 years)
+- English Language and Literature (english-language-and-literature, 4 years)
+- Environmental Science (environmental-science, 4 years)
+- Interior Design (interior-design, 4 years)
+- Islamic Studies (Specialization in Computer Technology) (islamic-studies-specialization-in-computer-technology, 4 years)
+- Material Sciences (material-sciences, 4 years)
+- Mathematics (with specializations) (mathematics-with-specializations, 4 years)
+- Physics (physics, 4 years)
+- Logistics and Supply Chain Management (logistics-and-supply-chain-management, 4 years)
+- Industrial Chemistry (industrial-chemistry, 4 years)
+- Remote Sensing and GIS (remote-sensing-and-gis, 4 years)
 
 ## Sources and Verification
 
-- https://uet.edu.pk (last verified 2026-09-02)
+- https://ecat.uet.edu.pk/General/Programs (last verified 2026-09-04)
+- https://admission.uet.edu.pk/program/1 (last verified 2026-09-04)
+- https://admission.uet.edu.pk/downloads (last verified 2026-09-04)
+- https://admission.uet.edu.pk/faqs (last verified 2026-09-04)
+- https://www.uet.edu.pk/academics/academics/undergraduate-academic-programs/index.html (last verified 2026-09-04)
+
+## Data Notes
+
+The current UET ECAT page lists 29 ECAT programmes and 14 non-ECAT programmes for UET Lahore, plus separate campus lists. Program-specific campus availability should be preserved in future schema fields.
 
 ## Disclaimer
 
-Admission policies change. Always confirm critical details on the official university website before applying.
+This dataset is a decision-support corpus, not official university verification. Where an institution did not publish a single program-specific numeric threshold/cutoff/date in the sources reviewed, the field is left null or a conservative baseline is used only where the institution publishes a general minimum. Always confirm the final application details on the official university portal.

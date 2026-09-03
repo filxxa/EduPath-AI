@@ -6,16 +6,53 @@ Website: https://www.muet.edu.pk.
 
 ## Description
 
-Leading public sector engineering university based in Sindh, Pakistan.
+Public-sector engineering and technology university with a broad Jamshoro undergraduate catalog and SZAB Campus Khairpur Mir’s offerings.
 
 ## Programs Offered
 
-- BS Computer Science (bs-cs, 4 years)
+- Bachelor of Engineering in Biomedical Engineering (bachelor-of-engineering-in-biomedical-engineering, 4 years)
+- Bachelor of Engineering in Chemical Engineering (bachelor-of-engineering-in-chemical-engineering, 4 years)
+- Bachelor of Engineering in Civil Engineering (bachelor-of-engineering-in-civil-engineering, 4 years)
+- Bachelor of Engineering in Computer Systems Engineering (bachelor-of-engineering-in-computer-systems-engineering, 4 years)
+- Bachelor of Engineering in Electrical Engineering (bachelor-of-engineering-in-electrical-engineering, 4 years)
+- Bachelor of Engineering in Electronics Engineering (bachelor-of-engineering-in-electronics-engineering, 4 years)
+- Bachelor of Engineering in Environmental Engineering (bachelor-of-engineering-in-environmental-engineering, 4 years)
+- Bachelor of Engineering in Industrial & Management Engineering (bachelor-of-engineering-in-industrial-management-engineering, 4 years)
+- Bachelor of Engineering in Mechanical Engineering (bachelor-of-engineering-in-mechanical-engineering, 4 years)
+- Bachelor of Engineering in Mechatronics Engineering (bachelor-of-engineering-in-mechatronics-engineering, 4 years)
+- Bachelor of Engineering in Metallurgy & Materials Engineering (bachelor-of-engineering-in-metallurgy-materials-engineering, 4 years)
+- Bachelor of Engineering in Mining Engineering (bachelor-of-engineering-in-mining-engineering, 4 years)
+- Bachelor of Engineering in Petroleum & Natural Gas Engineering (bachelor-of-engineering-in-petroleum-natural-gas-engineering, 4 years)
+- Bachelor of Engineering in Software Engineering (bachelor-of-engineering-in-software-engineering, 4 years)
+- Bachelor of Engineering in Telecommunication Engineering (bachelor-of-engineering-in-telecommunication-engineering, 4 years)
+- Bachelor of Engineering in Textile Engineering (bachelor-of-engineering-in-textile-engineering, 4 years)
+- Architecture (architecture, 5 years)
+- City & Regional Planning (CRP) (city-regional-planning-crp, 4 years)
+- Business Administration (BBA) (business-administration-bba, 4 years)
+- English Studies (english-studies, 4 years)
+- Computer Science (computer-science, 4 years)
+- Environmental Sciences (environmental-sciences, 4 years)
+- Mathematics (mathematics, 4 years)
+- Cyber Security (cyber-security, 4 years)
+- Artificial Intelligence (artificial-intelligence, 4 years)
+- Civil Engineering Technology (civil-engineering-technology, 4 years)
+- Electrical Engineering Technology (electrical-engineering-technology, 4 years)
+- Bachelor of Engineering in Electronic Engineering (bachelor-of-engineering-in-electronic-engineering, 4 years)
+- BS Mathematics (bs-mathematics, 4 years)
+- BS Computer Science (bs-computer-science, 4 years)
+- BS Cyber Security (bs-cyber-security, 4 years)
 
 ## Sources and Verification
 
-- https://www.muet.edu.pk (last verified 2026-09-02)
+- https://admissions.muet.edu.pk/wp-content/uploads/2026/05/ug_prospectus_2026-27_B-26.pdf (last verified 2026-09-04)
+- https://admissions.muet.edu.pk/wp-content/uploads/2026/04/14-04-2026-Detailed-Admission-Advertisement-for-Academic-Session-2026-27-26-Batch.pdf (last verified 2026-09-04)
+- https://admissions.muet.edu.pk/wp-content/uploads/2026/04/15-04-2026-Undergraduate-Admissions-for-Session-2026-27-26-Batch-One-Page.pdf (last verified 2026-09-04)
+- https://admissions.muet.edu.pk/bsprogram.php (last verified 2026-09-04)
+
+## Data Notes
+
+The official 2026-27 poster lists 16 BE disciplines at Jamshoro plus 9 Bachelor/BS/Technology entries, and a separate Khairpur catalog. The full 2026-27 prospectus is treated as authoritative where poster and portal wording differ.
 
 ## Disclaimer
 
-Admission policies change. Always confirm critical details on the official university website before applying.
+This dataset is a decision-support corpus, not official university verification. Where an institution did not publish a single program-specific numeric threshold/cutoff/date in the sources reviewed, the field is left null or a conservative baseline is used only where the institution publishes a general minimum. Always confirm the final application details on the official university portal.

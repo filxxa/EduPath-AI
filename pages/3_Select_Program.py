@@ -22,21 +22,22 @@ data = load_universities()
 universities = list_universities(data)
 
 cities = sorted({u.get("location", "Other") for u in universities})
-fields = sorted({p.get("name", "") for u in universities for p in list_programs(u)})
+categories = sorted({p.get("category", "Other") for u in universities for p in list_programs(u)})
 
 with st.container(border=True):
     st.markdown("### 🔍 Filters")
     fcol1, fcol2 = st.columns(2)
     selected_city = fcol1.selectbox("Filter by City", ["All"] + cities)
-    selected_field = fcol2.selectbox("Filter by Field", ["All"] + fields)
+    selected_category = fcol2.selectbox("Filter by Category", ["All"] + categories)
 
 match_count = 0
 for uni in universities:
     city_match = selected_city == "All" or uni.get("location") == selected_city
     programs = list_programs(uni)
     for prog in programs:
-        field_match = selected_field == "All" or prog.get("name") == selected_field
-        if not (city_match and field_match):
+        cat = prog.get("category", "Other")
+        cat_match = selected_category == "All" or cat == selected_category
+        if not (city_match and cat_match):
             continue
 
         match_count += 1
@@ -52,13 +53,17 @@ for uni in universities:
             c1.write(uni.get("description", ""))
 
             req = prog.get("requirements", {})
+            min_agg = req.get("minimum_aggregate")
+            deadline = req.get("application_deadline")
+            test = req.get("admission_test")
             c1.markdown(
                 f"""
                 <div style="margin-top:0.5rem;">
-                    <span class="ep-chip">⏱️ {prog.get('duration', 'N/A')}</span>
-                    <span class="ep-chip">✅ Min {req.get('minimum_aggregate')}%</span>
-                    <span class="ep-chip">📝 {req.get('admission_test', 'N/A')}</span>
-                    <span class="ep-chip">📅 {req.get('application_deadline', 'N/A')}</span>
+                    <span class="ep-chip">🏷️ {cat}</span>
+                    <span class="ep-chip">⏱️ {prog.get('duration') or 'N/A'}</span>
+                    <span class="ep-chip">✅ {'Min ' + str(min_agg) + '%' if min_agg else 'Min aggregate check'}</span>
+                    <span class="ep-chip">📝 {test or 'N/A'}</span>
+                    <span class="ep-chip">📅 {deadline or 'N/A'}</span>
                 </div>
                 """,
                 unsafe_allow_html=True,

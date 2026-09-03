@@ -1,21 +1,58 @@
-# COMSATS — Overview
+# COMSATS University Islamabad — Overview
 
 Full name: COMSATS University Islamabad.
-Location: Islamabad.
-Website: https://comsats.edu.pk.
+Location: Multiple campuses.
+Website: https://islamabad.comsats.edu.pk.
 
 ## Description
 
-Large public-sector university with campuses across Pakistan and strong IT programs.
+Multi-campus public-sector university with undergraduate programs in computing, engineering, sciences, business and social sciences.
 
 ## Programs Offered
 
-- BS Computer Science (bs-cs, 4 years)
+- Accounting and Finance (accounting-and-finance, 4 years)
+- Bioinformatics (bioinformatics, 4 years)
+- Biotechnology (biotechnology, 4 years)
+- Bio Sciences (bio-sciences, 4 years)
+- Business Administration (business-administration, 4 years)
+- Chemical Engineering (chemical-engineering, 4 years)
+- Civil Engineering (civil-engineering, 4 years)
+- Computer Engineering (computer-engineering, 4 years)
+- Computer Science (computer-science, 4 years)
+- Development Studies (development-studies, 4 years)
+- Earth Sciences (earth-sciences, 4 years)
+- Economics (economics, 4 years)
+- Electronics (electronics, 4 years)
+- Electrical Engineering (electrical-engineering, 4 years)
+- Electrical (Computer) Engineering (electrical-computer-engineering, 4 years)
+- Electrical (Electronics) Engineering (electrical-electronics-engineering, 4 years)
+- Electrical (Power) Engineering (electrical-power-engineering, 4 years)
+- Electrical (Telecommunication) Engineering (electrical-telecommunication-engineering, 4 years)
+- Environmental Sciences (environmental-sciences, 4 years)
+- Mathematics (mathematics, 4 years)
+- Mechanical Engineering (mechanical-engineering, 4 years)
+- Physics (physics, 4 years)
+- Psychology (psychology, 4 years)
+- Software Engineering (software-engineering, 4 years)
+- Telecommunication & Networking (telecommunication-networking, 4 years)
+- Artificial Intelligence (artificial-intelligence, 4 years)
+- Business Data Analytics (business-data-analytics, 4 years)
+- English (Language & Literature) (english-language-literature, 4 years)
+- Media and Communication Studies (media-and-communication-studies, 4 years)
+- Economics with Data Science (economics-with-data-science, 4 years)
+- Mathematics with Data Science (mathematics-with-data-science, 4 years)
 
 ## Sources and Verification
 
-- https://comsats.edu.pk (last verified 2026-09-02)
+- https://ww2.comsats.edu.pk/internationalstudents/allprograms.aspx (last verified 2026-09-04)
+- https://ww2.comsats.edu.pk/ro/Prospectus/UG_Prospectus/Undergraduate-Prospectus-2025-26.pdf (last verified 2026-09-04)
+- https://islamabad.comsats.edu.pk/comsats-admissions.aspx (last verified 2026-09-04)
+- https://lahore.comsats.edu.pk/admissions.aspx (last verified 2026-09-04)
+
+## Data Notes
+
+COMSATS has a campus-specific program matrix. The current JSON is expanded as a national catalog; campus availability should be represented per program in the next schema revision rather than inferred from the national list.
 
 ## Disclaimer
 
-Admission policies change. Always confirm critical details on the official university website before applying.
+This dataset is a decision-support corpus, not official university verification. Where an institution did not publish a single program-specific numeric threshold/cutoff/date in the sources reviewed, the field is left null or a conservative baseline is used only where the institution publishes a general minimum. Always confirm the final application details on the official university portal.

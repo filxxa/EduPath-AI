@@ -6,17 +6,43 @@ Website: https://lums.edu.pk.
 
 ## Description
 
-Premier private research university known for business, economics, science, and computer science.
+Private research university with undergraduate schools spanning business, humanities/social sciences, science/engineering and law.
 
 ## Programs Offered
 
-- BS Computer Science (bs-cs, 4 years)
-- BBA (BSc Honors Management Science) (bba, 4 years)
+- BSc (Honours) Accounting and Finance (bsc-honours-accounting-and-finance, 4 years)
+- BSc (Honours) Management Science (bsc-honours-management-science, 4 years)
+- BA (Honours) Comparative Literature and Creative Arts (CLCA) (ba-honours-comparative-literature-and-creative-arts-clca, 4 years)
+- BA (Honours) English (ba-honours-english, 4 years)
+- BA (Honours) History (ba-honours-history, 4 years)
+- BSc (Honours) Anthropology and Sociology (bsc-honours-anthropology-and-sociology, 4 years)
+- BSc (Honours) Economics (bsc-honours-economics, 4 years)
+- BSc (Honours) Economics and Mathematics (Joint Major) (bsc-honours-economics-and-mathematics-joint-major, 4 years)
+- BSc (Honours) Economics, Data and Computer Science (Joint Major) (bsc-honours-economics-data-and-computer-science-joint-major, 4 years)
+- BSc (Honours) Political Science (bsc-honours-political-science, 4 years)
+- BSc (Honours) Politics and Economics (bsc-honours-politics-and-economics, 4 years)
+- BSc (Honours) Psychology (bsc-honours-psychology, 4 years)
+- BS Biology (bs-biology, 4 years)
+- BS Chemical Engineering (bs-chemical-engineering, 4 years)
+- BS Chemistry (bs-chemistry, 4 years)
+- BS Computer Science (bs-computer-science, 4 years)
+- BS Economics and Mathematics (Joint Major) (bs-economics-and-mathematics-joint-major, 4 years)
+- BS Electrical Engineering (bs-electrical-engineering, 4 years)
+- BS Mathematics (bs-mathematics, 4 years)
+- BS Physics (bs-physics, 4 years)
+- BA-LL.B (Honours) (ba-ll-b-honours, 5 years)
 
 ## Sources and Verification
 
-- https://lums.edu.pk (last verified 2026-09-02)
+- https://admission.lums.edu.pk/undergraduate-programmes (last verified 2026-09-04)
+- https://lums.edu.pk/programme-finder (last verified 2026-09-04)
+- https://admission.lums.edu.pk/admission-faqs (last verified 2026-09-04)
+- https://admission.lums.edu.pk/undergraduate-programmes (last verified 2026-09-04)
+
+## Data Notes
+
+The current LUMS site explicitly lists 21 undergraduate programmes. Academic thresholds are published as school/programme conditions rather than a single aggregate cutoff; this dataset uses 70% as the minimum academic baseline for the rule engine and preserves the school-specific notes for contextual guidance.
 
 ## Disclaimer
 
-Admission policies change. Always confirm critical details on the official university website before applying.
+This dataset is a decision-support corpus, not official university verification. Where an institution did not publish a single program-specific numeric threshold/cutoff/date in the sources reviewed, the field is left null or a conservative baseline is used only where the institution publishes a general minimum. Always confirm the final application details on the official university portal.
