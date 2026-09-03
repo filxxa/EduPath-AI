@@ -64,6 +64,9 @@ class ExtractedDocument:
     fields: list[ExtractedField]
     ocr_note: str | None = None
     is_scanned_pdf: bool | None = None
+    ocr_confidence: float | None = None
+    page_count: int | None = None
+    pages_processed: int | None = None
 
     def to_dict(self) -> dict[str, Any]:
         """Serialize to a dict that preserves the legacy parser contract."""
@@ -71,12 +74,15 @@ class ExtractedDocument:
             "qualification": None,
             "board": None,
             "aggregate": None,
+            "hssc_percentage": None,
+            "ssc_percentage": None,
+            "hssc_group": None,
             "name": None,
             "test_score": None,
         }
-        for f in self.fields:
-            if f.field in legacy_fields and f.value is not None:
-                legacy_fields[f.field] = f.value
+        for extracted_field in self.fields:
+            if extracted_field.field in legacy_fields and extracted_field.value is not None:
+                legacy_fields[extracted_field.field] = extracted_field.value
 
         return {
             "filename": self.filename,
@@ -89,10 +95,12 @@ class ExtractedDocument:
             },
             "extraction_method": self.extraction_method,
             "raw_text": self.raw_text,
-            "fields": [f.to_dict() for f in self.fields],
+            "fields": [extracted_field.to_dict() for extracted_field in self.fields],
             "ocr_note": self.ocr_note,
             "is_scanned_pdf": self.is_scanned_pdf,
-            # Legacy keys expected by pages/1_Upload_Documents.py
+            "ocr_confidence": self.ocr_confidence,
+            "page_count": self.page_count,
+            "pages_processed": self.pages_processed,
             **legacy_fields,
         }
 
@@ -110,16 +118,19 @@ class ExtractedDocument:
             ),
             extraction_method=data.get("extraction_method", "unknown"),
             raw_text=data.get("raw_text", ""),
-            fields=[ExtractedField.from_dict(f) for f in data.get("fields", [])],
+            fields=[ExtractedField.from_dict(item) for item in data.get("fields", [])],
             ocr_note=data.get("ocr_note"),
             is_scanned_pdf=data.get("is_scanned_pdf"),
+            ocr_confidence=data.get("ocr_confidence"),
+            page_count=data.get("page_count"),
+            pages_processed=data.get("pages_processed"),
         )
 
     def field_value(self, name: str) -> Any:
         """Return the first extracted value for a field, if any."""
-        for f in self.fields:
-            if f.field == name:
-                return f.value
+        for extracted_field in self.fields:
+            if extracted_field.field == name:
+                return extracted_field.value
         return None
 
 
@@ -160,7 +171,7 @@ class MergeProposal:
         return {
             "profile": self.profile,
             "documents": self.documents,
-            "conflicts": [c.to_dict() for c in self.conflicts],
+            "conflicts": [conflict.to_dict() for conflict in self.conflicts],
             "warnings": self.warnings,
         }
 
@@ -169,6 +180,6 @@ class MergeProposal:
         return cls(
             profile=data.get("profile", {}),
             documents=data.get("documents", []),
-            conflicts=[Conflict.from_dict(c) for c in data.get("conflicts", [])],
+            conflicts=[Conflict.from_dict(item) for item in data.get("conflicts", [])],
             warnings=data.get("warnings", []),
         )

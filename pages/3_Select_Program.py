@@ -4,6 +4,7 @@ from __future__ import annotations
 import streamlit as st
 
 from backend.data_loader import list_programs, list_universities, load_universities
+from backend.state import set_selection
 from ui import init_session_state, inject_theme, nav_row, page_header, render_sidebar
 
 st.set_page_config(page_title="Select Program | EduPath AI", page_icon="🎓", layout="wide")
@@ -66,14 +67,7 @@ for uni in universities:
             btn_label = "Selected ✓" if selected else "Select Program"
             btn_type = "secondary" if selected else "primary"
             if c2.button(btn_label, key=f"select_{uni['id']}_{prog['id']}", use_container_width=True, type=btn_type):
-                st.session_state["selected_university_id"] = uni["id"]
-                st.session_state["selected_program_id"] = prog["id"]
-                st.session_state["selected_program_with_university"] = {
-                    **prog,
-                    "university_name": uni["name"],
-                    "university_id": uni["id"],
-                }
-                st.session_state["eligibility_result"] = None
+                set_selection(uni["id"], prog["id"])
                 st.success(f"Selected {uni['name']} — {prog['name']}")
                 st.rerun()
 

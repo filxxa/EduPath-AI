@@ -36,8 +36,22 @@ def test_rejects_corrupted_text_file() -> None:
     assert result.errors == ["Text file appears corrupted or binary."]
 
 
-def test_accepts_pdf_as_manual_entry_placeholder() -> None:
-    result = validate_upload("transcript.pdf", b"%PDF")
+def test_accepts_pdf_with_valid_signature() -> None:
+    result = validate_upload("transcript.pdf", b"%PDF-1.7\n")
 
     assert result.valid
-    assert "accepted but not parsed" in result.warnings[0]
+    assert result.warnings == []
+
+
+def test_rejects_mismatched_pdf_signature() -> None:
+    result = validate_upload("transcript.pdf", b"not a PDF")
+
+    assert not result.valid
+    assert result.errors == ["File content does not match the '.pdf' extension."]
+
+
+def test_rejects_mismatched_image_signature() -> None:
+    result = validate_upload("scan.png", b"not an image")
+
+    assert not result.valid
+    assert result.errors == ["File content does not match the '.png' extension."]

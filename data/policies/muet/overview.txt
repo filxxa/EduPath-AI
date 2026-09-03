@@ -1,0 +1,21 @@
+# MUET — Overview
+
+Full name: Mehran University of Engineering and Technology.
+Location: Jamshoro.
+Website: https://www.muet.edu.pk.
+
+## Description
+
+Leading public sector engineering university based in Sindh, Pakistan.
+
+## Programs Offered
+
+- BS Computer Science (bs-cs, 4 years)
+
+## Sources and Verification
+
+- https://www.muet.edu.pk (last verified 2026-09-02)
+
+## Disclaimer
+
+Admission policies change. Always confirm critical details on the official university website before applying.

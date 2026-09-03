@@ -2,35 +2,29 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
 
 from backend.documents.models import ValidationResult
 
+TEXT_EXTENSIONS: set[str] = {".txt", ".md", ".csv"}
+PDF_EXTENSIONS: set[str] = {".pdf"}
+IMAGE_EXTENSIONS: set[str] = {".png", ".jpg", ".jpeg"}
+SUPPORTED_EXTENSIONS: set[str] = TEXT_EXTENSIONS | PDF_EXTENSIONS | IMAGE_EXTENSIONS
+PLACEHOLDER_EXTENSIONS: set[str] = set()
+MAX_FILE_SIZE_BYTES: int = 10 * 1024 * 1024
 
-# Supported extensions that the pipeline can handle at some level.
-SUPPORTED_EXTENSIONS: set[str] = {
-    ".txt",
-    ".md",
-    ".csv",
-}
 
-# File types accepted for upload but only handled as placeholders until OCR arrives.
-PLACEHOLDER_EXTENSIONS: set[str] = {
-    ".pdf",
-    ".png",
-    ".jpg",
-    ".jpeg",
-}
-
-MAX_FILE_SIZE_BYTES: int = 10 * 1024 * 1024  # 10 MB
+def _has_expected_signature(suffix: str, content: bytes) -> bool:
+    if suffix == ".pdf":
+        return b"%PDF-" in content[:1024]
+    if suffix == ".png":
+        return content.startswith(b"\x89PNG\r\n\x1a\n")
+    if suffix in {".jpg", ".jpeg"}:
+        return content.startswith(b"\xff\xd8\xff")
+    return True
 
 
 def validate_upload(filename: str, content: bytes | None = None) -> ValidationResult:
-    """Validate a single uploaded file.
-
-    Checks extension support, emptiness, size, and basic corruption indicators.
-    Returns a ValidationResult; errors mean the file should not be processed.
-    """
+    """Validate a single uploaded file before text extraction begins."""
     result = ValidationResult()
 
     if not filename or not isinstance(filename, str):
@@ -42,10 +36,10 @@ def validate_upload(filename: str, content: bytes | None = None) -> ValidationRe
         result.add_error("File has no extension.")
         return result
 
-    if suffix not in SUPPORTED_EXTENSIONS and suffix not in PLACEHOLDER_EXTENSIONS:
+    if suffix not in SUPPORTED_EXTENSIONS:
         result.add_error(
             f"Unsupported file type '{suffix}'. Supported: "
-            f"{', '.join(sorted(SUPPORTED_EXTENSIONS | PLACEHOLDER_EXTENSIONS))}"
+            f"{', '.join(sorted(SUPPORTED_EXTENSIONS))}"
         )
         return result
 
@@ -67,21 +61,16 @@ def validate_upload(filename: str, content: bytes | None = None) -> ValidationRe
             f"Maximum allowed is {MAX_FILE_SIZE_BYTES / 1024 / 1024:.0f} MB."
         )
 
-    # Basic corruption sniff: if a text file contains too many null bytes, treat it
-    # as binary/corrupted.
-    if suffix in SUPPORTED_EXTENSIONS:
+    if suffix in TEXT_EXTENSIONS:
         null_bytes = content.count(b"\x00")
         if null_bytes > 0 and null_bytes / len(content) > 0.01:
             result.add_error("Text file appears corrupted or binary.")
 
-    if suffix in PLACEHOLDER_EXTENSIONS:
-        result.add_warning(
-            f"{suffix.upper()} files are accepted but not parsed in this version. "
-            "Please enter the document details manually."
-        )
+    if suffix in PDF_EXTENSIONS | IMAGE_EXTENSIONS and not _has_expected_signature(suffix, content):
+        result.add_error(f"File content does not match the '{suffix}' extension.")
 
     return result
 
 
 def is_supported_text_file(filename: str) -> bool:
-    return Path(filename).suffix.lower() in SUPPORTED_EXTENSIONS
+    return Path(filename).suffix.lower() in TEXT_EXTENSIONS

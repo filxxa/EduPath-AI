@@ -1,3 +1,4 @@
+from backend.documents.models import ExtractedDocument
 from backend.parser import (
     build_profile_from_parsed,
     build_profile_proposal,
@@ -29,6 +30,9 @@ def test_build_profile_from_parsed_returns_legacy_profile() -> None:
         "qualification": "FSc Pre-Engineering",
         "board": "BISE Lahore",
         "aggregate": 88.4,
+        "hssc_percentage": 88.4,
+        "ssc_percentage": None,
+        "test_scores": {},
         "documents": ["Academic Transcript (FSc/Intermediate)"],
     }
 
@@ -45,3 +49,26 @@ def test_build_profile_proposal_preserves_conflicts_and_warnings() -> None:
     assert proposal["profile"]["aggregate"] == 88.4
     assert {conflict["field"] for conflict in proposal["conflicts"]} == {"name", "aggregate"}
     assert proposal["warnings"]
+
+
+def test_parser_round_trips_additive_ocr_metadata() -> None:
+    parsed = parse_upload("hssc_transcript.txt", CONTENT)
+    parsed.update(
+        {
+            "ocr_confidence": 87.5,
+            "page_count": 2,
+            "pages_processed": 2,
+            "extraction_method": "pdf_ocr",
+            "is_scanned_pdf": True,
+        }
+    )
+
+    round_tripped = ExtractedDocument.from_dict(parsed).to_dict()
+    proposal = build_profile_proposal([round_tripped])
+
+    assert proposal["profile"]["name"] == "Ali Hassan"
+    assert round_tripped["qualification"] == "FSc Pre-Engineering"
+    assert round_tripped["ocr_confidence"] == 87.5
+    assert round_tripped["page_count"] == 2
+    assert round_tripped["pages_processed"] == 2
+    assert round_tripped["is_scanned_pdf"] is True

@@ -47,6 +47,9 @@ def test_merges_one_document_into_a_profile() -> None:
         "qualification": "FSc Pre-Engineering",
         "board": "BISE Lahore",
         "aggregate": 88.4,
+        "hssc_percentage": None,
+        "ssc_percentage": None,
+        "test_scores": {},
         "documents": ["Academic Transcript (FSc/Intermediate)"],
     }
     assert proposal.conflicts == []
@@ -137,3 +140,23 @@ def test_keeps_optional_documents_without_creating_conflicts() -> None:
         "Photograph",
     ]
     assert proposal.conflicts == []
+
+
+def test_keeps_valid_classified_document_without_extractable_fields() -> None:
+    cnic = make_document("cnic.txt", "CNIC / B-Form", "cnic_bform")
+
+    proposal = merge_documents([cnic])
+
+    assert proposal.documents == ["CNIC / B-Form"]
+    assert proposal.profile["documents"] == ["CNIC / B-Form"]
+
+
+def test_excludes_invalid_and_unclassified_documents_from_profile_presence() -> None:
+    invalid = make_document("broken.txt", "CNIC / B-Form", "cnic_bform")
+    invalid.validation.add_error("Unreadable document")
+    unclassified = make_document("supporting.txt", "Supporting Document", None)
+
+    proposal = merge_documents([invalid, unclassified])
+
+    assert proposal.documents == []
+    assert proposal.profile["documents"] == []

@@ -8,22 +8,14 @@ from typing import Any
 import streamlit as st
 
 from backend.data_loader import load_universities
-from backend.profile import default_profile, is_profile_complete
+from backend.profile import is_profile_complete
 
 
 def init_session_state() -> None:
-    defaults = {
-        "student_profile": default_profile(),
-        "parsed_docs": [],
-        "selected_university_id": None,
-        "selected_program_id": None,
-        "eligibility_result": None,
-        "selected_program_with_university": None,
-        "chat_history": [],
-    }
-    for key, value in defaults.items():
-        if key not in st.session_state:
-            st.session_state[key] = value
+    """Initialize the canonical application session state."""
+    from backend.state import init_session_state as init_application_state
+
+    init_application_state()
 
 
 def get_universities_data() -> dict[str, Any]:
@@ -31,9 +23,30 @@ def get_universities_data() -> dict[str, Any]:
 
 
 def render_sidebar() -> None:
+    from backend import state
+
     with st.sidebar:
         st.title("EduPath AI")
         st.caption("Smart University Admission Assistant")
+        st.divider()
+
+        profile = state.get_profile()
+        uni, prog, _, _ = state.get_selection()
+        name = profile.get("name") or "Student"
+        qualification = profile.get("qualification") or "Not recorded"
+        agg = profile.get("aggregate")
+        agg_label = f"{agg}%" if isinstance(agg, (int, float)) else "Not recorded"
+
+        st.markdown("**Current application**")
+        st.markdown(f"👤 **{name}**")
+        st.markdown(f"🎓 {qualification}")
+        st.markdown(f"📊 Aggregate: {agg_label}")
+        if uni and prog:
+            st.markdown(f"🏫 {uni['name']}")
+            st.markdown(f"📚 {prog['name']}")
+        else:
+            st.caption("No program selected.")
+
         st.divider()
 
         completed, total, ratio = progress_summary()
@@ -47,6 +60,19 @@ def render_sidebar() -> None:
             st.markdown(f"{icon} {label}")
 
         st.divider()
+
+        if st.checkbox(
+            "I understand this will clear my profile, documents, eligibility, and conversation.",
+            key="sidebar_reset_confirm",
+        ):
+            st.button(
+                "Start New Application",
+                type="primary",
+                use_container_width=True,
+                key="sidebar_reset",
+                on_click=state.reset_application,
+            )
+
         st.markdown("[About](#)")
 
 
@@ -143,7 +169,11 @@ STEP_PAGES: list[str] = [
 _EP_CSS = """
 <style>
     .block-container {
-        padding-top: 1.5rem !important;
+        /* Streamlit's top toolbar is ~60px (3.75rem). On the very first render
+           the main content block can start at viewport y=0 and overlap the
+           toolbar, clipping the dashboard header. A fixed top pad guarantees
+           clearance on first paint and after navigation/reset. */
+        padding-top: 4.5rem !important;
         max-width: 1180px !important;
     }
     [data-testid="stSidebar"] {
@@ -327,10 +357,7 @@ _EP_CSS = """
 
 
 def inject_theme() -> None:
-    """Inject the EduPath design-system CSS once per session."""
-    if st.session_state.get("_ep_theme_injected"):
-        return
-    st.session_state["_ep_theme_injected"] = True
+    """Inject the EduPath design-system CSS for the current page DOM."""
     st.markdown(_EP_CSS, unsafe_allow_html=True)
 
 

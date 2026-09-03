@@ -3,8 +3,8 @@ from __future__ import annotations
 
 import streamlit as st
 
-from backend.parser import build_profile_proposal, parse_upload
-from backend.profile import merge_profile
+from backend.documents import process_uploads, propose_profile
+from backend.state import get_profile, update_profile
 from ui import init_session_state, inject_theme, nav_row, page_header, render_sidebar
 
 st.set_page_config(page_title="Upload Documents | EduPath AI", page_icon="📄", layout="wide")
@@ -18,32 +18,73 @@ page_header(
     "📄",
 )
 
+feedback = st.session_state.pop("_upload_feedback", None)
+if feedback:
+    st.success(feedback)
+
 with st.container(border=True):
     st.markdown("### 📤 Document Upload")
     uploaded_files = st.file_uploader(
         "Drag and drop files here",
         type=["txt", "md", "pdf", "png", "jpg", "jpeg"],
         accept_multiple_files=True,
-        help="Text files (.txt/.md) are parsed automatically. PDFs and images need manual verification in this MVP.",
+        help="Text files, PDFs, and images are extracted where possible. Verify all details before building your profile.",
     )
 
 if uploaded_files:
-    parsed = []
+    upload_bytes = []
     for file in uploaded_files:
-        content = file.read()
-        result = parse_upload(file.name, content)
-        result["filename"] = file.name
-        parsed.append(result)
+        file.seek(0)
+        upload_bytes.append((file.name, file.getvalue()))
+        file.seek(0)
+
+    docs = process_uploads(upload_bytes)
+    parsed = [document.to_dict() for document in docs]
     st.session_state["parsed_docs"] = parsed
 
     st.markdown("### 📑 Parsing Results")
-    for doc in parsed:
-        validation = doc.get("validation", {})
+    empty_docs = [
+        d for d in docs
+        if d.extraction_method == "image_ocr" and not d.raw_text
+    ]
+    ocr_failed = [
+        d for d in docs
+        if d.extraction_method in {"error", "unavailable"}
+        or (not d.validation.valid and not d.raw_text)
+    ]
+    if empty_docs or ocr_failed:
+        parts = []
+        if empty_docs:
+            names = ", ".join(d.filename for d in empty_docs)
+            parts.append(
+                f"OCR returned no readable text for: **{names}**. Please upload clearer "
+                "marksheets or enter those details manually."
+            )
+        if ocr_failed:
+            parts.append(
+                "One or more documents could not be processed by OCR. Review the details "
+                "below or enter them manually."
+            )
+        st.warning(" ".join(parts))
+
+    for doc_dict in parsed:
+        validation = doc_dict.get("validation", {})
         errors = validation.get("errors", [])
         warnings = validation.get("warnings", [])
 
+        method = doc_dict.get("extraction_method", "error")
+        if method in {"text", "pdf_text"}:
+            method_badge = "✓ Text extracted"
+        elif method in {"image_ocr", "pdf_ocr", "pdf_hybrid"}:
+            method_badge = "✓ OCR used — scanned document"
+        elif method == "placeholder":
+            method_badge = "ℹ️ File not parsed"
+        else:
+            method_badge = "⚠ OCR could not read this document"
+
         status_icon = "❌" if errors else "⚠️" if warnings else "📄"
-        with st.expander(f"{status_icon} {doc['filename']} — {doc['document_type']}"):
+        with st.expander(f"{status_icon} {doc_dict['filename']} — {doc_dict['document_type']}"):
+            st.caption(method_badge)
             if errors:
                 for err in errors:
                     st.error(err)
@@ -51,32 +92,62 @@ if uploaded_files:
                 for warn in warnings:
                     st.warning(warn)
 
-            cols = st.columns(3)
-            cols[0].metric("Qualification", doc.get("qualification") or "—")
-            cols[1].metric("Board", doc.get("board") or "—")
-            cols[2].metric("Aggregate", f"{doc.get('aggregate')}%" if doc.get("aggregate") else "—")
-            if doc.get("ocr_note"):
-                st.info(doc["ocr_note"])
+            category = doc_dict.get("canonical_category")
+            aggregate = doc_dict.get("aggregate")
+            hssc_percentage = doc_dict.get("hssc_percentage")
+            ssc_percentage = doc_dict.get("ssc_percentage")
+            if hssc_percentage is None and category == "intermediate_transcript":
+                hssc_percentage = aggregate
+            if ssc_percentage is None and category == "matric_certificate":
+                ssc_percentage = aggregate
+
+            identity_cols = st.columns(3)
+            identity_cols[0].metric("Name", doc_dict.get("name") or "—")
+            identity_cols[1].metric("Qualification", doc_dict.get("qualification") or "—")
+            identity_cols[2].metric("Board", doc_dict.get("board") or "—")
+            score_cols = st.columns(3)
+            score_cols[0].metric("HSSC %", f"{hssc_percentage}%" if hssc_percentage is not None else "—")
+            score_cols[1].metric("SSC %", f"{ssc_percentage}%" if ssc_percentage is not None else "—")
+            score_cols[2].metric("Aggregate", f"{aggregate}%" if aggregate is not None else "—")
+            if doc_dict.get("ocr_note"):
+                st.info(doc_dict["ocr_note"])
+
+            raw_text = doc_dict.get("raw_text", "")
+            if method in {"image_ocr", "pdf_ocr", "pdf_hybrid", "pdf_text"}:
+                with st.expander("Debug: View Raw Extracted OCR Text"):
+                    if not raw_text:
+                        st.error(
+                            "No raw text was generated by Tesseract. "
+                            "Check image orientation or file buffer."
+                        )
+                    else:
+                        st.code(raw_text, language=None)
 
     if st.button("Build Profile from Documents", type="primary", key="build_profile"):
-        proposal = build_profile_proposal(parsed)
+        proposal = propose_profile(docs)
 
-        for warning in proposal.get("warnings", []):
+        for warning in proposal.warnings:
             st.warning(warning)
+        for conflict in proposal.conflicts:
+            st.warning(
+                f"Conflicting {conflict.field} values from "
+                f"{', '.join(conflict.source_documents)}: "
+                f"{', '.join(str(v) for v in conflict.values)}. "
+                "Please review on the Profile page."
+            )
 
-        auto_profile = proposal.get("profile", {})
-        st.session_state["student_profile"] = merge_profile(
-            st.session_state["student_profile"], auto_profile
-        )
-        st.success("Profile created. Review and edit it on the next page.")
-        if st.button("Go to Profile →", key="go_to_profile"):
-            st.switch_page("pages/2_Profile.py")
+        update_profile(proposal.profile, source="ocr")
+        st.session_state["_upload_feedback"] = "Profile created. Review and edit it on the next page."
+        st.rerun()
+
+    if st.button("Go to Profile →", key="go_to_profile"):
+        st.switch_page("pages/2_Profile.py")
 
 st.divider()
 
 page_header("Or Enter Details Manually", "No documents? Fill in your academic information directly.", "✍️")
 
-profile = st.session_state["student_profile"]
+profile = get_profile()
 
 with st.container(border=True):
     with st.form("manual_profile_form"):
@@ -110,7 +181,8 @@ with st.container(border=True):
                 "board": board,
                 "aggregate": aggregate,
             }
-            st.session_state["student_profile"] = merge_profile(profile, updated)
-            st.success("Profile saved.")
+            update_profile(updated, source="manual")
+            st.session_state["_upload_feedback"] = "Profile saved."
+            st.rerun()
 
 nav_row(next_page="pages/2_Profile.py", next_label="Next: Review Profile →")

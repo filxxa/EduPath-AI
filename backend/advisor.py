@@ -139,10 +139,16 @@ def generate_action_plan(result: dict[str, Any], program: dict[str, Any]) -> lis
         "description": "Upload and confirm FSc transcript, Matric certificate, and other academic records.",
     })
 
+    test_name = (
+        result.get("admission_test")
+        or program.get("requirements", {}).get("admission_test")
+        or "Admission Test"
+    )
+
     if result.get("test_missing"):
         plan.append({
             "step": 2,
-            "title": f"Register for {result['admission_test']}",
+            "title": f"Register for {test_name}",
             "status": "current_action",
             "description": "Register, prepare, and upload your official score card.",
         })
@@ -155,7 +161,7 @@ def generate_action_plan(result: dict[str, Any], program: dict[str, Any]) -> lis
     else:
         plan.append({
             "step": 2,
-            "title": f"{result['admission_test']} Score Ready",
+            "title": f"{test_name} Score Ready",
             "status": "completed",
             "description": "Your admission test score is recorded.",
         })

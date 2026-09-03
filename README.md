@@ -31,8 +31,9 @@ EduPath AI combines student document information, structured university/program 
 ├── ui.py                           # Shared Streamlit UI helpers
 ├── backend/                        # Backend modules
 │   ├── __init__.py
+│   ├── documents/                  # Validation, OCR, PDF, and field extraction
 │   ├── data_loader.py              # Load and query universities.json
-│   ├── parser.py                   # Document parsing helpers
+│   ├── parser.py                   # Backward-compatible document parsing facade
 │   ├── profile.py                  # Student profile management
 │   ├── eligibility.py              # Rule-based eligibility engine
 │   └── advisor.py                  # Grounded AI advisor responses
@@ -63,21 +64,38 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-3. Run the app:
+3. Install Tesseract OCR for PDF/image extraction (Windows):
+
+```bash
+winget install --exact --id UB-Mannheim.TesseractOCR
+tesseract --version
+tesseract --list-langs
+```
+
+Ensure `eng` appears in the language list. Put Tesseract on `PATH`, or set `TESSERACT_CMD` to its executable, for example `C:\Program Files\Tesseract-OCR\tesseract.exe`.
+
+4. Run the app:
 
 ```bash
 streamlit run app.py
 ```
 
+## Document extraction
+
+Text files are decoded directly. PDFs with embedded text are read with PyMuPDF; scanned PDF pages and PNG/JPEG uploads use English Tesseract OCR with lightweight grayscale/autocontrast preprocessing. OCR is limited to 10 PDF pages, 5 rendered scan pages, 40 megapixels per image, and 20 seconds per OCR operation. PyMuPDF does not require Poppler.
+
+All extracted values must be verified before building a profile. Password-protected, corrupt, oversized, blank, or partially processed uploads surface a clear validation message and can be completed manually.
+
+For a future Debian-based Streamlit deployment, install `tesseract-ocr` and `tesseract-ocr-eng` through a deployment-specific `packages.txt`; local Windows development does not use that file.
+
 ## MVP limitations
 
-- Document parsing is simulated. Text files (`.txt`, `.md`) are parsed using simple pattern matching. PDFs and images show a placeholder and require manual verification.
+- OCR is English-first and can misread low-quality or complex document layouts; always verify extracted details.
 - The AI advisor is rule-based and grounded in the stored university data. A real LLM can be plugged in later.
 - University data is static JSON and should be verified against official university websites before use.
 
 ## Next steps
 
-- Integrate OCR or document AI for real PDF/image parsing.
 - Add an LLM for more natural advisor conversations while keeping eligibility logic rule-based.
 - Expand the university dataset and add city/program filters.
 - Add user accounts and persistent storage.

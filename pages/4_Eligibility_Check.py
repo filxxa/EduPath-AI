@@ -3,8 +3,7 @@ from __future__ import annotations
 
 import streamlit as st
 
-from backend.data_loader import get_program, get_university, load_universities
-from backend.eligibility import check_eligibility
+from backend.state import ensure_eligibility, get_profile, get_selection, recalculate_eligibility
 from ui import (
     init_session_state,
     inject_theme,
@@ -26,23 +25,20 @@ page_header(
     "✅",
 )
 
-uni_id = st.session_state.get("selected_university_id")
-prog_id = st.session_state.get("selected_program_id")
+uni, prog, prog_display, result = get_selection()
 
-if not uni_id or not prog_id:
+if prog is None:
     with st.container(border=True):
         st.warning("Please select a university and program first.")
         if st.button("Go to Program Selection", type="primary", key="goto_select"):
             st.switch_page("pages/3_Select_Program.py")
     st.stop()
 
-data = load_universities()
-uni = get_university(data, uni_id)
-prog = get_program(uni, prog_id)
-profile = st.session_state["student_profile"]
+profile = get_profile()
 
-# Enrich program with university name for display
-prog_display = {**prog, "university_name": uni["name"]}
+# Auto-compute eligibility from the current profile if the cache is missing
+# (update_profile / set_selection clear it when anything relevant changes).
+result = ensure_eligibility()
 
 c1, c2 = st.columns([2, 1])
 
@@ -60,11 +56,9 @@ with c1:
     )
 
 with c2:
-    if st.button("Run Eligibility Check", type="primary", use_container_width=True, key="run_check"):
-        result = check_eligibility(profile, prog)
-        st.session_state["eligibility_result"] = result
+    if st.button("Re-run Eligibility Check", type="primary", use_container_width=True, key="run_check"):
+        result = recalculate_eligibility()
 
-    result = st.session_state.get("eligibility_result")
     if result:
         verdict_card(result)
 
@@ -114,10 +108,15 @@ if result:
 
     st.markdown("### Required Documents")
     req_docs = prog.get("requirements", {}).get("required_documents", [])
+    missing_document_names = {doc["name"] for doc in result["missing_documents"]}
     student_docs = [d.lower() for d in profile.get("documents", [])]
     for doc in req_docs:
         name = doc["name"]
-        found = any(name.lower() in sd or sd in name.lower() for sd in student_docs)
+        found = (
+            name not in missing_document_names
+            if doc.get("required", False)
+            else any(name.lower() in sd or sd in name.lower() for sd in student_docs)
+        )
         icon = "✅" if found else "❌"
         color = "#047857" if found else "#B91C1C"
         st.markdown(

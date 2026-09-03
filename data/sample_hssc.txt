@@ -1,0 +1,9 @@
+Higher Secondary School Certificate
+Name: Ali Hassan
+Father's Name: Muhammad Hassan
+Roll Number: 123456
+Board: BISE Lahore
+Qualification: FSc Pre-Engineering
+HSSC Percentage: 88.4
+Group: Pre-Engineering
+Year: 2024

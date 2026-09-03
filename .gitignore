@@ -11,10 +11,14 @@ venv/
 # Streamlit secrets
 .secrets/
 secrets.toml
+.streamlit/secrets.toml
 
 # Data generated at runtime
 data/student_profile.json
 data/sessions/
+
+# RAG vector index (rebuilt from data/policies/)
+.rag_cache/
 
 # IDE
 .vscode/

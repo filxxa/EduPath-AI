@@ -1,0 +1,44 @@
+# LUMS — BS Computer Science
+
+University full name: Lahore University of Management Sciences.
+Location: Lahore. Program duration: 4 years.
+
+## Eligibility
+
+- FSc Pre-Engineering
+- ICS
+- A-Levels (BBB minimum grade condition)
+
+## Aggregate
+
+Minimum aggregate: 70.0%.
+Estimated merit cutoff: 85.0%.
+Aggregate formula: (not specified).
+
+## Admission Test
+
+SAT / LCAT.
+
+## Required Documents
+
+- FSc Transcript / A-Levels Equivalence (required)
+- CNIC / B-Form (required)
+- SAT / LCAT Score Report (required)
+- Matriculation Certificate / O-Level Equivalence (required)
+- Statement of Purpose & Teacher Recommendations (required)
+
+## Deadline
+
+Application deadline: 2027-02-01. The verified year for this deadline is 2027.
+
+## Fees
+
+Estimated fee: PKR 750,000.
+
+## Notes
+
+SBASSE Subject Test also required for BS CS.
+
+## Sources
+
+Verified by EduPath against official university publications. See the university-level overview file for source URLs and last-verified dates.

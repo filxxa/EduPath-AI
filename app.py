@@ -3,15 +3,13 @@ from __future__ import annotations
 
 import streamlit as st
 
+from backend import state
 from ui import (
-    STEP_PAGES,
     app_footer,
     app_header,
     feature_card,
     inject_theme,
     init_session_state,
-    progress_steps,
-    progress_summary,
     render_sidebar,
     step_card,
     trust_note,
@@ -73,43 +71,121 @@ with st.container():
 st.markdown("<br>", unsafe_allow_html=True)
 
 # ---------------------------------------------------------------------------
-# Progress card
+# Application state card (derived from canonical state)
 # ---------------------------------------------------------------------------
-completed, total, ratio = progress_summary()
-steps = progress_steps()
+profile = state.get_profile()
+uni, prog, prog_display, result = state.get_selection()
+checklist = state.build_checklist()
+next_actions = state.build_next_actions()
+
+has_profile = bool(
+    profile.get("name")
+    or profile.get("qualification")
+    or profile.get("aggregate")
+    or profile.get("hssc_percentage") is not None
+    or profile.get("ssc_percentage") is not None
+    or profile.get("documents")
+)
+has_selection = prog is not None
+is_empty = not has_profile and not has_selection
 
 with st.container(border=True):
-    st.markdown("### Application Progress")
-    st.progress(ratio)
-    st.markdown(f"**{completed} of {total} steps completed**")
+    st.markdown("### Your application")
 
-    step_cols = st.columns(total)
-    for col, (label, done) in zip(step_cols, steps):
-        icon = "✅" if done else "⬜"
-        with col:
-            st.caption(f"{icon} {label}")
-
-    st.markdown("<br>", unsafe_allow_html=True)
-
-    if completed == total:
-        st.success("All steps are complete — review your Action Plan.")
-        if st.button(
-            "View Action Plan",
-            type="primary",
-            use_container_width=True,
-            key="progress_action_plan",
-        ):
-            st.switch_page("pages/6_Action_Plan.py")
+    if is_empty:
+        st.caption(
+            "You have not started an application yet. Upload your documents or "
+            "explore programs to get going."
+        )
+        empty_col1, empty_col2, _ = st.columns([1, 1, 2])
+        with empty_col1:
+            if st.button(
+                "Start Your Application",
+                type="primary",
+                use_container_width=True,
+                key="empty_start",
+            ):
+                st.switch_page("pages/1_Upload_Documents.py")
+        with empty_col2:
+            if st.button(
+                "Explore Programs",
+                use_container_width=True,
+                key="empty_explore",
+            ):
+                st.switch_page("pages/3_Select_Program.py")
     else:
-        next_step_index = next((i for i, (_, done) in enumerate(steps) if not done), 0)
-        next_page = STEP_PAGES[next_step_index]
-        if st.button(
-            "Continue where you left off →",
-            type="primary",
-            use_container_width=True,
-            key="progress_continue",
-        ):
-            st.switch_page(next_page)
+        # Student summary
+        name = profile.get("name") or "Student"
+        qualification = profile.get("qualification") or "—"
+        agg = profile.get("aggregate")
+        agg_label = f"{agg}%" if isinstance(agg, (int, float)) else "—"
+        st.markdown(
+            f"**{name}** · Qualification: {qualification} · Aggregate: {agg_label}"
+        )
+
+        # Selection summary
+        if has_selection:
+            st.markdown(
+                f"**Target:** {uni['name']} — {prog['name']}"
+            )
+        else:
+            st.caption("No university or program selected yet.")
+
+        # Eligibility verdict pill
+        if has_selection and result is not None:
+            verdict = result.get("verdict", "UNKNOWN")
+            pill_colors = {
+                "ELIGIBLE": "#047857",
+                "ELIGIBLE - Conditional": "#B45309",
+                "NOT ELIGIBLE": "#B91C1C",
+                "UNKNOWN": "#5B5876",
+            }
+            color = pill_colors.get(verdict, "#5B5876")
+            st.markdown(
+                f'<span style="background:{color};color:#fff;padding:0.25rem 0.6rem;'
+                f'border-radius:999px;font-size:0.8rem;font-weight:700;">{verdict}</span>',
+                unsafe_allow_html=True,
+            )
+
+        # Checklist compact
+        if checklist:
+            done = sum(1 for item in checklist if item.get("done"))
+            total = len(checklist)
+            st.progress(done / total if total else 0.0)
+            st.caption(f"{done} of {total} milestones complete")
+
+        # Next action
+        if next_actions:
+            top = next_actions[0]
+            st.markdown(f"**Next:** {top['title']} — {top['description']}")
+            action_cols = st.columns([1, 1, 2])
+            with action_cols[0]:
+                if st.button(
+                    "Go →",
+                    type="primary",
+                    use_container_width=True,
+                    key="dashboard_next_action",
+                ):
+                    st.switch_page(top["target"])
+            with action_cols[1]:
+                if st.button(
+                    "View full plan",
+                    use_container_width=True,
+                    key="dashboard_full_plan",
+                ):
+                    st.switch_page("pages/6_Action_Plan.py")
+        else:
+            st.success("All actionable steps are complete — submit your application.")
+
+        if has_selection:
+            advisor_cols = st.columns([1, 3])
+            with advisor_cols[0]:
+                if st.button(
+                    "Talk to AI Advisor",
+                    use_container_width=True,
+                    key="dashboard_advisor",
+                ):
+                    st.switch_page("pages/5_AI_Advisor.py")
 
 st.markdown("<br>", unsafe_allow_html=True)
 

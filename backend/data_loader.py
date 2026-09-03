@@ -6,10 +6,19 @@ from pathlib import Path
 from typing import Any
 
 
+def _cache(fn):
+    try:
+        import streamlit as st
+        return st.cache_data(fn)
+    except Exception:
+        return fn
+
+
 def _repo_root() -> Path:
     return Path(__file__).resolve().parent.parent
 
 
+@_cache
 def load_universities(path: Path | None = None) -> dict[str, Any]:
     if path is None:
         path = _repo_root() / "data" / "universities.json"

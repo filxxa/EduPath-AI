@@ -3,7 +3,12 @@ from __future__ import annotations
 
 import streamlit as st
 
-from backend.profile import add_document, add_test_score, merge_profile
+from backend.state import (
+    add_manual_document,
+    add_manual_test_score,
+    get_profile,
+    update_profile,
+)
 from ui import init_session_state, inject_theme, nav_row, page_header, render_sidebar
 
 st.set_page_config(page_title="Profile | EduPath AI", page_icon="👤", layout="wide")
@@ -17,23 +22,37 @@ page_header(
     "👤",
 )
 
-profile = st.session_state["student_profile"]
+feedback = st.session_state.pop("_profile_feedback", None)
+if feedback:
+    st.success(feedback)
+
+profile = get_profile()
+
+QUALIFICATIONS = ["FSc Pre-Engineering", "ICS", "A-Levels", "FA", "FSc", "Other"]
+BOARDS = ["FBISE Islamabad", "BISE Lahore", "BISE Karachi", "BISE Rawalpindi", "Other"]
+GROUPS = ["Pre-Engineering", "Pre-Medical", "General Science", "Humanities", "Commerce", "Other"]
+
+
+def _selectbox_index(options: list[str], value: str | None) -> int:
+    try:
+        return options.index(value) if value in options else 0
+    except ValueError:
+        return 0
+
 
 with st.container(border=True):
     with st.form("profile_form"):
         col1, col2 = st.columns(2)
         name = col1.text_input("Full Name", value=profile.get("name", ""))
-        qualification_options = ["FSc Pre-Engineering", "ICS", "A-Levels", "FA", "FSc", "Other"]
         qualification = col2.selectbox(
             "Qualification",
-            qualification_options,
-            index=qualification_options.index(profile.get("qualification")) if profile.get("qualification") in qualification_options else 0,
+            QUALIFICATIONS,
+            index=_selectbox_index(QUALIFICATIONS, profile.get("qualification")),
         )
-        board_options = ["FBISE Islamabad", "BISE Lahore", "BISE Karachi", "BISE Rawalpindi", "Other"]
         board = col1.selectbox(
             "Board / Examination Authority",
-            board_options,
-            index=board_options.index(profile.get("board")) if profile.get("board") in board_options else 0,
+            BOARDS,
+            index=_selectbox_index(BOARDS, profile.get("board")),
         )
         aggregate = col2.number_input(
             "Aggregate / Percentage (%)",
@@ -41,6 +60,34 @@ with st.container(border=True):
             max_value=100.0,
             value=float(profile.get("aggregate") or 0.0),
             step=0.1,
+        )
+
+        st.markdown("#### 📊 Academic Breakdown (optional)")
+        acol1, acol2 = st.columns(2)
+        hssc_percentage = acol1.number_input(
+            "HSSC / Intermediate Percentage (%)",
+            min_value=0.0,
+            max_value=100.0,
+            value=float(profile.get("hssc_percentage") or 0.0),
+            step=0.1,
+            help="FSc / ICS / FA / A-Levels final percentage. This is the number most universities key off.",
+        )
+        ssc_percentage = acol2.number_input(
+            "SSC / Matric Percentage (%)",
+            min_value=0.0,
+            max_value=100.0,
+            value=float(profile.get("ssc_percentage") or 0.0),
+            step=0.1,
+            help="Matric / O-Levels final percentage.",
+        )
+        hssc_group = acol1.selectbox(
+            "HSSC Group",
+            GROUPS,
+            index=_selectbox_index(GROUPS, profile.get("hssc_group")),
+        )
+        roll_number = acol2.text_input(
+            "Roll Number",
+            value=profile.get("roll_number") or "",
         )
 
         notes = st.text_area("Notes", value=profile.get("notes", ""))
@@ -52,10 +99,15 @@ with st.container(border=True):
                 "qualification": qualification,
                 "board": board,
                 "aggregate": aggregate,
+                "hssc_percentage": hssc_percentage or None,
+                "ssc_percentage": ssc_percentage or None,
+                "hssc_group": hssc_group,
+                "roll_number": roll_number or None,
                 "notes": notes,
             }
-            st.session_state["student_profile"] = merge_profile(profile, updated)
-            st.success("Profile updated.")
+            update_profile(updated, source="manual")
+            st.session_state["_profile_feedback"] = "Profile updated."
+            st.rerun()
 
 c1, c2 = st.columns(2)
 
@@ -71,9 +123,10 @@ with c1:
 
         with st.expander("Add a document type manually"):
             doc_type = st.text_input("Document type", key="manual_doc")
-            if st.button("Add Document", key="add_doc"):
-                st.session_state["student_profile"] = add_document(profile, doc_type)
-                st.success(f"Added {doc_type}")
+            if st.button("Add Document", key="add_doc") and doc_type.strip():
+                add_manual_document(doc_type)
+                st.session_state["_profile_feedback"] = f"Added {doc_type.strip()}."
+                st.rerun()
 
 with c2:
     with st.container(border=True):
@@ -89,9 +142,10 @@ with c2:
             tcol1, tcol2 = st.columns(2)
             test_name = tcol1.text_input("Test name", key="test_name")
             test_score = tcol2.text_input("Score / Roll number", key="test_score")
-            if st.button("Add Test Score", key="add_test"):
-                st.session_state["student_profile"] = add_test_score(profile, test_name, test_score)
-                st.success(f"Added {test_name}")
+            if st.button("Add Test Score", key="add_test") and test_name.strip():
+                add_manual_test_score(test_name, test_score)
+                st.session_state["_profile_feedback"] = f"Added {test_name.strip()}."
+                st.rerun()
 
 nav_row(
     back_page="pages/1_Upload_Documents.py",

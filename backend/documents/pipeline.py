@@ -1,13 +1,11 @@
 """Pipeline orchestrator for document processing."""
 from __future__ import annotations
 
-from typing import Any
-
 from backend.documents.classification import classify_document
 from backend.documents.extraction import extract_text
 from backend.documents.fields import extract_fields
 from backend.documents.merging import merge_documents
-from backend.documents.models import ExtractedDocument, MergeProposal, ValidationResult
+from backend.documents.models import ExtractedDocument, MergeProposal
 from backend.documents.validation import validate_upload
 
 
@@ -24,15 +22,21 @@ def process_upload(filename: str, content: bytes | None = None) -> ExtractedDocu
             extraction_method="none",
             raw_text="",
             fields=[],
-            ocr_note=None,
-            is_scanned_pdf=None,
         )
 
     extraction = extract_text(filename, content)
-    raw_text = extraction["raw_text"]
+    for error in extraction["errors"]:
+        validation.add_error(error)
+    for warning in extraction["warnings"]:
+        validation.add_warning(warning)
 
+    raw_text = extraction["raw_text"]
     classification = classify_document(filename, raw_text)
-    fields = extract_fields(filename, raw_text, classification["canonical_category"])
+    fields = (
+        extract_fields(filename, raw_text, classification["canonical_category"])
+        if validation.valid
+        else []
+    )
 
     return ExtractedDocument(
         filename=filename,
@@ -44,6 +48,9 @@ def process_upload(filename: str, content: bytes | None = None) -> ExtractedDocu
         fields=fields,
         ocr_note=extraction["ocr_note"],
         is_scanned_pdf=extraction["is_scanned_pdf"],
+        ocr_confidence=extraction["ocr_confidence"],
+        page_count=extraction["page_count"],
+        pages_processed=extraction["pages_processed"],
     )
 
 

@@ -131,6 +131,31 @@ def _pick_aggregate(docs: list[ExtractedDocument], warnings: list[str]) -> float
     return max(aggregates, key=lambda x: x[0])[0]
 
 
+def _pick_split_percentages(docs: list[ExtractedDocument]) -> dict[str, float | None]:
+    """Pull HSSC/SSC split percentages from the academically-relevant documents.
+
+    Returns ``{"hssc_percentage": ..., "ssc_percentage": ...}`` with either
+    value possibly ``None``. The split fields are emitted alongside the
+    legacy aggregate so consumers that have migrated to the Pakistani-style
+    split can read them, while legacy consumers still see ``aggregate``.
+    """
+    hssc: float | None = None
+    ssc: float | None = None
+
+    # Prefer intermediate transcript for HSSC; matric for SSC.
+    for doc in docs:
+        if doc.canonical_category == "intermediate_transcript" and hssc is None:
+            val = doc.field_value("hssc_percentage")
+            if isinstance(val, (int, float)):
+                hssc = float(val)
+        elif doc.canonical_category == "matric_certificate" and ssc is None:
+            val = doc.field_value("ssc_percentage")
+            if isinstance(val, (int, float)):
+                ssc = float(val)
+
+    return {"hssc_percentage": hssc, "ssc_percentage": ssc}
+
+
 def merge_documents(docs: list[ExtractedDocument]) -> MergeProposal:
     """Merge documents into a proposed student profile, detecting conflicts."""
     warnings: list[str] = []
@@ -147,17 +172,26 @@ def merge_documents(docs: list[ExtractedDocument]) -> MergeProposal:
     documents: list[str] = []
     for doc in docs:
         label = doc.document_type
-        if doc.canonical_category and label not in documents:
+        if doc.validation.valid and doc.canonical_category and label not in documents:
             documents.append(label)
-        elif not doc.canonical_category and label not in documents:
-            documents.append(label)
+
+    # Collect test scores extracted from score-card documents. Keyed by the
+    # normalised test name so merge_profile can merge them without dropping
+    # previously-recorded scores.
+    test_scores: dict[str, str] = {}
+    for doc in docs:
+        ts = doc.field_value("test_score")
+        if isinstance(ts, dict) and ts.get("test"):
+            test_scores[ts["test"]] = ts.get("score", "")
 
     profile: dict[str, Any] = {
         "name": _pick_name(docs) or "",
         "qualification": _pick_qualification(docs),
         "board": _pick_board(docs),
         "aggregate": _pick_aggregate(docs, warnings),
+        **_pick_split_percentages(docs),
         "documents": documents,
+        "test_scores": test_scores,
     }
 
     # Surface a warning if no academic aggregate could be extracted.

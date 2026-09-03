@@ -1,0 +1,22 @@
+# FAST-NUCES — Overview
+
+Full name: FAST National University of Computer and Emerging Sciences.
+Location: Islamabad.
+Website: https://nu.edu.pk.
+
+## Description
+
+One of Pakistan's leading institutions for computing and engineering education.
+
+## Programs Offered
+
+- BS Computer Science (bs-cs, 4 years)
+- BS Electrical Engineering (bs-ee, 4 years)
+
+## Sources and Verification
+
+- https://nu.edu.pk (last verified 2026-09-02)
+
+## Disclaimer
+
+Admission policies change. Always confirm critical details on the official university website before applying.
