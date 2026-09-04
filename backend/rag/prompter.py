@@ -160,7 +160,14 @@ def _format_profile(profile: dict[str, Any]) -> str:
     if "test_scores" in profile and profile["test_scores"]:
         scores = ", ".join(f"{k}={v}" for k, v in profile["test_scores"].items())
         parts.append(f"Test scores: {scores}")
-    if "documents" in profile and profile["documents"]:
+    doc_records = profile.get("document_records") or []
+    if doc_records:
+        doc_summary = ", ".join(
+            f"{r.get('filename', '?')} ({r.get('category', '?')})"
+            for r in doc_records
+        )
+        parts.append(f"Uploaded documents: {doc_summary}")
+    elif "documents" in profile and profile["documents"]:
         parts.append("Uploaded documents: " + ", ".join(profile["documents"]))
     return "\n".join(parts) if parts else "No profile has been filled in yet."
 

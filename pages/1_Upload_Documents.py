@@ -1,10 +1,34 @@
-"""STEP 1: Upload academic documents and build a student profile."""
+"""STEP 1: Upload academic documents via category-based slots.
+
+Architecture:
+    Upload time:  file → bytes → SHA-256 → check cache → if new: process_upload() → store
+    Build Profile: already-processed ExtractedDocuments → merge_documents() → profile update
+"""
 from __future__ import annotations
+
+import time as _time
 
 import streamlit as st
 
-from backend.documents import process_uploads, propose_profile
-from backend.state import get_profile, update_profile
+from backend.documents.categories import (
+    DISPLAY_ORDER,
+    MULTI_DOC_CATEGORIES,
+    UPLOAD_CATEGORIES,
+    UPLOAD_GROUPS,
+)
+from backend.documents import (
+    DocumentCache,
+    fingerprint,
+    process_uploads_cached,
+    propose_profile,
+)
+from backend.documents.cache import CacheStats
+from backend.state import (
+    build_profile_from_processed,
+    composite_fingerprint,
+    get_profile,
+    update_profile,
+)
 from ui import init_session_state, inject_theme, nav_row, page_header, render_sidebar
 
 st.set_page_config(page_title="Upload Documents | EduPath AI", page_icon="📄", layout="wide")
@@ -14,7 +38,7 @@ render_sidebar()
 
 page_header(
     "Upload Documents",
-    "Upload FSc / A-Levels transcripts, entry test score cards, CNIC / B-Form, and other required documents. We'll extract key details to build your profile.",
+    "Upload your documents into the correct category below. Your selection is authoritative — the system uses it to route extraction and eligibility checks.",
     "📄",
 )
 
@@ -22,87 +46,167 @@ feedback = st.session_state.pop("_upload_feedback", None)
 if feedback:
     st.success(feedback)
 
-with st.container(border=True):
-    st.markdown("### 📤 Document Upload")
-    uploaded_files = st.file_uploader(
-        "Drag and drop files here",
-        type=["txt", "md", "pdf", "png", "jpg", "jpeg"],
-        accept_multiple_files=True,
-        help="Text files, PDFs, and images are extracted where possible. Verify all details before building your profile.",
-    )
+if "category_uploads" not in st.session_state:
+    st.session_state["category_uploads"] = {}
 
-if uploaded_files:
-    upload_bytes = []
-    for file in uploaded_files:
-        file.seek(0)
-        upload_bytes.append((file.name, file.getvalue()))
-        file.seek(0)
+category_uploads: dict = st.session_state["category_uploads"]
 
-    docs = process_uploads(upload_bytes)
-    parsed = [document.to_dict() for document in docs]
-    st.session_state["parsed_docs"] = parsed
+if "_doc_cache_store" not in st.session_state:
+    st.session_state["_doc_cache_store"] = {}
+doc_cache = DocumentCache(st.session_state["_doc_cache_store"])
 
-    st.markdown("### 📑 Parsing Results")
-    empty_docs = [
-        d for d in docs
-        if d.extraction_method == "image_ocr" and not d.raw_text
-    ]
-    ocr_failed = [
-        d for d in docs
-        if d.extraction_method in {"error", "unavailable"}
-        or (not d.validation.valid and not d.raw_text)
-    ]
-    if empty_docs or ocr_failed:
-        parts = []
-        if empty_docs:
-            names = ", ".join(d.filename for d in empty_docs)
-            parts.append(
-                f"OCR returned no readable text for: **{names}**. Please upload clearer "
-                "marksheets or enter those details manually."
-            )
-        if ocr_failed:
-            parts.append(
-                "One or more documents could not be processed by OCR. Review the details "
-                "below or enter them manually."
-            )
-        st.warning(" ".join(parts))
+processed: dict[str, dict] = st.session_state.setdefault("processed_documents", {})
 
-    for doc_dict in parsed:
+ALLOWED_TYPES = ["txt", "md", "pdf", "png", "jpg", "jpeg"]
+
+_GROUP_ICONS = {
+    "Academic": "🎓",
+    "Admission Test": "📝",
+    "Identity & Residence": "🪪",
+    "Other": "📎",
+}
+
+
+def _process_new_uploads(cat_key: str, files_list: list) -> list[str]:
+    """Process newly uploaded files immediately and store in processed_documents.
+
+    Returns a list of status messages for each file processed.
+    The spinner covers the ENTIRE operation: OCR/extraction + state commit.
+    """
+    from backend.documents.pipeline import process_upload
+
+    messages: list[str] = []
+    for f in files_list:
+        content = f.getvalue()
+        fp = fingerprint(content)
+        cache_key = f"{fp}:{cat_key}"
+
+        if cache_key in processed:
+            messages.append(f"`{f.name}` already processed — skipped.")
+            continue
+
+        cat_label = UPLOAD_CATEGORIES.get(cat_key, {}).get("label", cat_key)
+        with st.spinner(f"Processing {cat_label}… running OCR and extracting information from {f.name}"):
+            t0 = _time.perf_counter()
+            doc = process_upload(f.name, content, user_category=cat_key)
+            elapsed_ms = round((_time.perf_counter() - t0) * 1000, 2)
+
+            processed[cache_key] = {
+                "document_dict": doc.to_dict(),
+                "processing_ms": elapsed_ms,
+                "category": cat_key,
+                "filename": f.name,
+                "fingerprint": fp,
+            }
+
+            doc_cache.put(content, cat_key, doc, elapsed_ms)
+
+        messages.append(f"✅ `{f.name}` processed successfully ({elapsed_ms:.0f}ms).")
+
+    return messages
+
+
+for group_name, category_keys in UPLOAD_GROUPS.items():
+    icon = _GROUP_ICONS.get(group_name, "📁")
+    st.markdown(f"### {icon} {group_name}")
+    cols = st.columns(len(category_keys))
+
+    for col_idx, cat_key in enumerate(category_keys):
+        meta = UPLOAD_CATEGORIES[cat_key]
+        label = meta["label"]
+        allows_multiple = meta["allows_multiple"]
+
+        with cols[col_idx]:
+            with st.container(border=True):
+                st.markdown(f"**{label}**")
+                if allows_multiple:
+                    st.caption("You can upload multiple files.")
+                else:
+                    st.caption("Single document — re-uploading replaces the previous one.")
+
+                existing = category_uploads.get(cat_key)
+                if existing:
+                    filenames = [f[0] for f in existing]
+                    st.markdown(
+                        " ".join(f"✅ `{fn}`" for fn in filenames),
+                        unsafe_allow_html=True,
+                    )
+
+                uploaded = st.file_uploader(
+                    "Upload",
+                    type=ALLOWED_TYPES,
+                    accept_multiple_files=allows_multiple,
+                    key=f"upload_{cat_key}",
+                    label_visibility="collapsed",
+                )
+
+                if uploaded:
+                    files_list = uploaded if isinstance(uploaded, list) else [uploaded]
+                    new_files = []
+                    for f in files_list:
+                        new_files.append((f.name, f.getvalue()))
+
+                    existing_names = {f[0] for f in existing} if existing else set()
+                    new_names = {f[0] for f in new_files}
+
+                    if new_names.issubset(existing_names):
+                        pass  # Already uploaded and processed — no state change, no rerun
+                    else:
+                        if allows_multiple:
+                            if existing:
+                                for item in new_files:
+                                    if item[0] not in existing_names:
+                                        existing.append(item)
+                            else:
+                                category_uploads[cat_key] = new_files
+                        else:
+                            category_uploads[cat_key] = new_files[-1:]
+
+                        _process_new_uploads(cat_key, files_list)
+                        st.rerun()
+
+                if existing:
+                    if st.button("Remove", key=f"remove_{cat_key}"):
+                        for fname, fbytes in category_uploads[cat_key]:
+                            fp = fingerprint(fbytes)
+                            cache_key = f"{fp}:{cat_key}"
+                            processed.pop(cache_key, None)
+                            doc_cache.invalidate(fbytes, cat_key)
+                        del category_uploads[cat_key]
+                        st.rerun()
+
+    st.markdown("")
+
+total_uploads = sum(len(v) for v in category_uploads.values())
+
+if processed:
+    st.divider()
+    st.markdown("### 📋 Processed Documents")
+
+    for cache_key, entry in processed.items():
+        doc_dict = entry["document_dict"]
+        doc_filename = entry.get("filename", doc_dict.get("filename", "?"))
+        cat_key = entry.get("category", "other")
+        cat_label = UPLOAD_CATEGORIES.get(cat_key, {}).get("label", cat_key)
+        processing_ms = entry.get("processing_ms", 0)
+
         validation = doc_dict.get("validation", {})
-        errors = validation.get("errors", [])
         warnings = validation.get("warnings", [])
+        errors = validation.get("errors", [])
 
         method = doc_dict.get("extraction_method", "error")
         if method in {"text", "pdf_text"}:
-            method_badge = "✓ Text extracted"
+            method_badge = "Text extracted"
         elif method in {"image_ocr", "pdf_ocr", "pdf_hybrid"}:
-            method_badge = "✓ OCR used — scanned document"
+            method_badge = "OCR used"
         elif method == "placeholder":
-            method_badge = "ℹ️ File not parsed"
+            method_badge = "File not parsed"
         else:
-            method_badge = "⚠ OCR could not read this document"
+            method_badge = "OCR could not read this document"
 
-        status_icon = "❌" if errors else "⚠️" if warnings else "📄"
-        with st.expander(f"{status_icon} {doc_dict['filename']} — {doc_dict['document_type']}"):
-            st.caption(method_badge)
+        status_icon = "❌" if errors else "⚠️" if warnings else "✅"
 
-            raw_text = doc_dict.get("raw_text", "")
-            fields_list = doc_dict.get("fields", [])
-            field_count = len(fields_list) if isinstance(fields_list, list) else 0
-
-            diag_cols = st.columns(3)
-            diag_cols[0].metric("Extraction", method.replace("_", " ").title())
-            diag_cols[1].metric("Text Length", f"{len(raw_text)} chars")
-            diag_cols[2].metric("Fields Found", field_count)
-
-            if not raw_text and method in {"image_ocr", "pdf_ocr", "pdf_hybrid"}:
-                st.error("OCR returned no text — check scan quality, orientation, or resolution.")
-            elif raw_text and field_count == 0:
-                st.warning(
-                    "Text was extracted but no fields could be parsed. "
-                    "The document format may not match expected marksheet patterns."
-                )
-
+        with st.expander(f"{status_icon} {doc_filename} — {cat_label} ({method_badge}) [{processing_ms:.0f}ms]"):
             if errors:
                 for err in errors:
                     st.error(err)
@@ -110,23 +214,15 @@ if uploaded_files:
                 for warn in warnings:
                     st.warning(warn)
 
-            category = doc_dict.get("canonical_category")
-            aggregate = doc_dict.get("aggregate")
-            hssc_percentage = doc_dict.get("hssc_percentage")
-            ssc_percentage = doc_dict.get("ssc_percentage")
-            if hssc_percentage is None and category == "intermediate_transcript":
-                hssc_percentage = aggregate
-            if ssc_percentage is None and category == "matric_certificate":
-                ssc_percentage = aggregate
+            fields_list = doc_dict.get("fields", [])
+            if fields_list:
+                st.markdown("**Extracted Fields:**")
+                for f in fields_list:
+                    fname = f.get("field", "?")
+                    fval = f.get("value", "—")
+                    st.text(f"  {fname}: {fval}")
 
-            identity_cols = st.columns(3)
-            identity_cols[0].metric("Name", doc_dict.get("name") or "—")
-            identity_cols[1].metric("Qualification", doc_dict.get("qualification") or "—")
-            identity_cols[2].metric("Board", doc_dict.get("board") or "—")
-            score_cols = st.columns(3)
-            score_cols[0].metric("HSSC %", f"{hssc_percentage}%" if hssc_percentage is not None else "—")
-            score_cols[1].metric("SSC %", f"{ssc_percentage}%" if ssc_percentage is not None else "—")
-            score_cols[2].metric("Aggregate", f"{aggregate}%" if aggregate is not None else "—")
+            raw_text = doc_dict.get("raw_text", "")
             if doc_dict.get("ocr_note"):
                 st.info(doc_dict["ocr_note"])
 
@@ -134,7 +230,6 @@ if uploaded_files:
                 with st.expander("Debug: OCR Diagnostics & Raw Text"):
                     attempts = doc_dict.get("ocr_attempts", [])
                     if attempts:
-                        st.markdown("**OCR Attempts (all variants × PSM modes)**")
                         attempt_rows = []
                         for a in attempts:
                             attempt_rows.append({
@@ -145,35 +240,32 @@ if uploaded_files:
                                 "Words": a.get("words", 0),
                             })
                         st.table(attempt_rows)
-                    elif method in {"image_ocr", "pdf_ocr", "pdf_hybrid"}:
-                        st.caption("No per-attempt diagnostics available for this extraction.")
 
-                    if not raw_text:
-                        st.error(
-                            "No raw text was generated by Tesseract. "
-                            "Check image orientation or file buffer."
-                        )
-                    else:
+                    if raw_text:
                         st.markdown("**Raw Extracted OCR Text**")
                         st.code(raw_text, language=None)
 
-    if st.button("Build Profile from Documents", type="primary", key="build_profile"):
-        proposal = propose_profile(docs)
+st.divider()
+st.markdown("### 📤 Build Profile")
 
-        for warning in proposal.warnings:
-            st.warning(warning)
-        for conflict in proposal.conflicts:
-            st.warning(
-                f"Conflicting {conflict.field} values from "
-                f"{', '.join(conflict.source_documents)}: "
-                f"{', '.join(str(v) for v in conflict.values)}. "
-                "Please review on the Profile page."
-            )
+if not processed:
+    st.info("Upload and process at least one document above, then build your profile here.")
+elif st.button("Build Profile from Documents", type="primary", key="build_profile"):
+    profile_data = build_profile_from_processed(processed)
+    if profile_data is None:
+        st.warning("Could not build profile from processed documents.")
+    else:
+        update_profile(profile_data, source="ocr")
 
-        update_profile(proposal.profile, source="ocr")
+        parsed = [entry["document_dict"] for entry in processed.values()]
+        st.session_state["parsed_docs"] = parsed
+        st.session_state["profile_built"] = True
+        st.session_state["profile_source_fingerprint"] = composite_fingerprint(processed)
+
         st.session_state["_upload_feedback"] = "Profile created. Review and edit it on the next page."
         st.rerun()
 
+if processed:
     if st.button("Go to Profile →", key="go_to_profile"):
         st.switch_page("pages/2_Profile.py")
 

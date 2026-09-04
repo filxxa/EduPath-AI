@@ -21,6 +21,7 @@ ELIGIBILITY_FIELDS: tuple[str, ...] = (
     "ssc_percentage",
     "hssc_group",
     "documents",
+    "document_records",
     "test_scores",
 )
 
@@ -45,6 +46,7 @@ def default_profile() -> dict[str, Any]:
         "target_university": None,
         "target_program": None,
         "documents": [],
+        "document_records": [],
         "test_scores": {},
         "notes": "",
         "field_sources": {},
@@ -64,9 +66,15 @@ def is_profile_complete(profile: dict[str, Any]) -> bool:
 def effective_aggregate(profile: dict[str, Any]) -> float | None:
     """Return the aggregate number eligibility should evaluate against.
 
-    Prefers HSSC percentage when present (most universities key off the
-    intermediate result); falls back to the legacy aggregate field.
+    Prefers entry test score when present (the primary business rule),
+    then HSSC percentage, then the legacy aggregate field.
     """
+    test_scores = profile.get("test_scores") or {}
+    if test_scores:
+        from backend.merit import _resolve_test_score
+        pct, _ = _resolve_test_score(test_scores, None)
+        if pct is not None:
+            return float(pct)
     hssc = profile.get("hssc_percentage")
     if isinstance(hssc, (int, float)):
         return float(hssc)
@@ -126,7 +134,23 @@ def merge_profile(
                 sources[f"test_scores.{name}"] = source
         new_profile["test_scores"] = test_existing
 
-    skip = {"documents", "test_scores", "field_sources"}
+    rec_existing = list(new_profile.get("document_records") or [])
+    rec_incoming = updates.get("document_records")
+    if isinstance(rec_incoming, list) and rec_incoming:
+        from backend.documents.categories import MULTI_DOC_CATEGORIES
+        if source == "manual" or sources.get("document_records") != "manual":
+            for rec in rec_incoming:
+                cat = rec.get("category", "other")
+                if cat in MULTI_DOC_CATEGORIES:
+                    rec_existing.append(rec)
+                else:
+                    rec_existing = [
+                        r for r in rec_existing if r.get("category") != cat
+                    ]
+                    rec_existing.append(rec)
+        new_profile["document_records"] = rec_existing
+
+    skip = {"documents", "document_records", "test_scores", "field_sources"}
     for key, value in updates.items():
         if key in skip:
             continue

@@ -6,9 +6,22 @@ import streamlit as st
 from backend.state import (
     add_manual_document,
     add_manual_test_score,
+    get_document_labels,
     get_profile,
+    set_document_label,
     update_profile,
 )
+from backend.documents.categories import (
+    DISPLAY_ORDER,
+    UPLOAD_CATEGORIES,
+    UPLOAD_GROUPS,
+)
+from backend.document_status import (
+    get_document_records,
+    get_document_status,
+    get_uploaded_categories,
+)
+from backend.documents.classification import DOCUMENT_LABELS
 from ui import init_session_state, inject_theme, nav_row, page_header, render_sidebar
 
 st.set_page_config(page_title="Profile | EduPath AI", page_icon="👤", layout="wide")
@@ -133,10 +146,37 @@ c1, c2 = st.columns(2)
 with c1:
     with st.container(border=True):
         st.markdown("### 📎 Uploaded Documents")
-        docs = profile.get("documents", [])
-        if docs:
-            for doc in docs:
-                st.markdown(f'<div class="ep-list-item">✅ {doc}</div>', unsafe_allow_html=True)
+        records = get_document_records(profile)
+        uploaded_cats = get_uploaded_categories(profile)
+
+        if records or uploaded_cats:
+            for group_name, cat_keys in UPLOAD_GROUPS.items():
+                group_cats = [k for k in cat_keys if k in uploaded_cats or any(r.get("category") == k for r in records)]
+                if not group_cats:
+                    continue
+                st.markdown(f"**{group_name}**")
+                for cat_key in group_cats:
+                    status = get_document_status(profile, cat_key)
+                    cat_label = UPLOAD_CATEGORIES.get(cat_key, {}).get("label", cat_key)
+                    if status["uploaded"]:
+                        filenames = ", ".join(status["filenames"])
+                        extraction = status["extraction_status"]
+                        icon = "✅" if extraction in ("extracted", "partial") else "⚠️"
+                        st.markdown(
+                            f'<div class="ep-list-item">{icon} <strong>{cat_label}</strong>: {filenames}'
+                            f' <em>({extraction})</em></div>',
+                            unsafe_allow_html=True,
+                        )
+                    else:
+                        legacy_docs = profile.get("documents", [])
+                        from backend.eligibility import _normalize_document
+                        for doc_name in legacy_docs:
+                            canonical = _normalize_document(doc_name)
+                            if canonical == cat_key:
+                                st.markdown(
+                                    f'<div class="ep-list-item">✅ <strong>{cat_label}</strong>: {doc_name} <em>(legacy)</em></div>',
+                                    unsafe_allow_html=True,
+                                )
         else:
             st.info("No documents uploaded yet.")
 

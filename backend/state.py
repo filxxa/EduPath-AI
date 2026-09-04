@@ -54,6 +54,11 @@ def session_defaults() -> dict[str, Any]:
         "selected_program_with_university": None,
         "chat_history": [],
         "chat_history_sources": [],
+        "document_labels": {},
+        "category_uploads": {},
+        "processed_documents": {},
+        "profile_built": False,
+        "profile_source_fingerprint": None,
     }
 
 
@@ -115,6 +120,30 @@ def add_manual_test_score(test_name: str, score: float | str) -> dict[str, Any]:
     return update_profile({"test_scores": {test_name: score}}, source="manual")
 
 
+def get_document_labels() -> dict[str, str]:
+    """Return the user-assigned document label overrides (filename → category)."""
+    init_session_state()
+    return st.session_state.get("document_labels", {})
+
+
+def set_document_label(filename: str, category: str | None) -> None:
+    """Set or clear a user label for a document. Invalidates eligibility."""
+    init_session_state()
+    labels = st.session_state.get("document_labels", {})
+    if category is None or category == "":
+        labels.pop(filename, None)
+    else:
+        labels[filename] = category
+    st.session_state["document_labels"] = labels
+    invalidate_eligibility()
+
+
+def get_effective_category(filename: str, auto_category: str | None) -> str | None:
+    """Return user label if set, otherwise the auto-detected category."""
+    labels = get_document_labels()
+    return labels.get(filename, auto_category)
+
+
 def _sync_aggregate(profile: dict[str, Any]) -> None:
     """Keep the legacy ``aggregate`` field aligned with HSSC/SSC inputs.
 
@@ -130,6 +159,41 @@ def _sync_aggregate(profile: dict[str, Any]) -> None:
 def invalidate_eligibility() -> None:
     """Clear the cached eligibility result so it will recompute on next read."""
     st.session_state["eligibility_result"] = None
+
+
+def composite_fingerprint(processed: dict[str, dict[str, Any]]) -> str:
+    """Compute a stable fingerprint from all processed document entries.
+
+    The fingerprint changes when any document is added, removed, or replaced.
+    """
+    import hashlib
+
+    parts = sorted(processed.keys())
+    raw = "|".join(parts)
+    return hashlib.sha256(raw.encode()).hexdigest()[:16]
+
+
+def build_profile_from_processed(
+    processed: dict[str, dict[str, Any]],
+) -> dict[str, Any] | None:
+    """Merge already-processed documents into a profile update.
+
+    This is a cheap operation — no OCR, no extraction. It deserializes cached
+    ``ExtractedDocument`` dicts, runs ``merge_documents()``, and returns the
+    proposed profile dict.  Returns ``None`` when there are no processed docs.
+    """
+    from backend.documents.models import ExtractedDocument
+    from backend.documents.merging import merge_documents
+
+    if not processed:
+        return None
+
+    docs = [
+        ExtractedDocument.from_dict(entry["document_dict"])
+        for entry in processed.values()
+    ]
+    proposal = merge_documents(docs)
+    return proposal.profile
 
 
 # ---------------------------------------------------------------------------
@@ -202,7 +266,12 @@ def recalculate_eligibility() -> dict[str, Any] | None:
     if prog is None:
         return None
     profile = get_profile()
-    result = check_eligibility(profile, prog)
+    result = check_eligibility(
+        profile,
+        prog,
+        document_labels=get_document_labels(),
+        document_records=profile.get("document_records"),
+    )
     st.session_state["eligibility_result"] = result
     return result
 
@@ -261,19 +330,14 @@ def build_checklist() -> list[dict[str, Any]]:
         "category": "selection",
     })
 
-    # Required documents — use the same taxonomy-aware check as the engine.
-    from backend.eligibility import (
-        _normalize_document,
-        _student_document_categories,
-    )
+    # Required documents — use the centralized document-status helpers.
+    from backend.document_status import has_document
+    from backend.eligibility import _normalize_document
 
-    student_cats = _student_document_categories(
-        [d for d in profile.get("documents", []) if isinstance(d, str)]
-    )
     for doc in prog.get("requirements", {}).get("required_documents", []):
         name = doc.get("name", "")
         category = _normalize_document(name)
-        done = bool(category and category in student_cats)
+        done = bool(category and has_document(profile, category))
         items.append({
             "key": f"doc_{category or name}",
             "label": name,

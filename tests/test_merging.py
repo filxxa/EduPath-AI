@@ -42,21 +42,21 @@ def test_merges_one_document_into_a_profile() -> None:
 
     proposal = merge_documents([document])
 
-    assert proposal.profile == {
-        "name": "Ali Hassan",
-        "father_name": None,
-        "qualification": "FSc Pre-Engineering",
-        "board": "BISE Lahore",
-        "aggregate": 88.4,
-        "total_marks": None,
-        "obtained_marks": None,
-        "roll_number": None,
-        "hssc_group": None,
-        "hssc_percentage": None,
-        "ssc_percentage": None,
-        "test_scores": {},
-        "documents": ["Academic Transcript (FSc/Intermediate)"],
-    }
+    assert proposal.profile["name"] == "Ali Hassan"
+    assert proposal.profile["father_name"] is None
+    assert proposal.profile["qualification"] == "FSc Pre-Engineering"
+    assert proposal.profile["board"] == "BISE Lahore"
+    assert proposal.profile["aggregate"] == 88.4
+    assert proposal.profile["total_marks"] is None
+    assert proposal.profile["obtained_marks"] is None
+    assert proposal.profile["roll_number"] is None
+    assert proposal.profile["hssc_group"] is None
+    assert proposal.profile["hssc_percentage"] is None
+    assert proposal.profile["ssc_percentage"] is None
+    assert proposal.profile["test_scores"] == {}
+    assert proposal.profile["documents"] == ["Academic Transcript (FSc/Intermediate)"]
+    assert len(proposal.profile["document_records"]) == 1
+    assert proposal.profile["document_records"][0]["category"] == "intermediate_transcript"
     assert proposal.conflicts == []
 
 
@@ -245,3 +245,112 @@ def test_prefers_intermediate_transcript_for_identity_fields() -> None:
     assert proposal.profile["father_name"] == "Intermediate Father"
     assert proposal.profile["roll_number"] == "111222"
     assert proposal.profile["hssc_group"] == "Pre-Medical"
+
+
+def make_document_with_user_category(
+    filename: str,
+    document_type: str,
+    canonical_category: str | None,
+    user_category: str | None,
+    **values: object,
+) -> ExtractedDocument:
+    fields = [
+        ExtractedField(
+            field=name,
+            value=value,
+            confidence=None,
+            source_document=filename,
+            extraction_method="test",
+        )
+        for name, value in values.items()
+    ]
+    return ExtractedDocument(
+        filename=filename,
+        document_type=document_type,
+        canonical_category=canonical_category,
+        user_category=user_category,
+        validation=ValidationResult(),
+        extraction_method="text",
+        raw_text="some text",
+        fields=fields,
+    )
+
+
+class TestDocumentRecords:
+    def test_merge_produces_document_records(self):
+        doc = make_document(
+            "hssc.txt",
+            "Academic Transcript (FSc/Intermediate)",
+            "intermediate_transcript",
+            name="Ali Hassan",
+            aggregate=88.0,
+        )
+        proposal = merge_documents([doc])
+        records = proposal.profile.get("document_records", [])
+        assert len(records) == 1
+        assert records[0]["filename"] == "hssc.txt"
+        assert records[0]["category"] == "intermediate_transcript"
+        assert records[0]["extraction_status"] == "extracted"
+
+    def test_document_records_uses_effective_category(self):
+        doc = make_document_with_user_category(
+            "scan.pdf",
+            "Other Document",
+            "intermediate_transcript",
+            user_category="other",
+            name="Test",
+        )
+        proposal = merge_documents([doc])
+        records = proposal.profile["document_records"]
+        assert records[0]["category"] == "other"
+
+    def test_document_records_failed_extraction(self):
+        doc = ExtractedDocument(
+            filename="broken.pdf",
+            document_type="Unknown",
+            canonical_category=None,
+            validation=ValidationResult(),
+            extraction_method="error",
+            raw_text="",
+            fields=[],
+        )
+        proposal = merge_documents([doc])
+        records = proposal.profile["document_records"]
+        assert records[0]["extraction_status"] == "failed"
+
+    def test_document_records_partial_extraction(self):
+        doc = ExtractedDocument(
+            filename="scan.pdf",
+            document_type="Transcript",
+            canonical_category="intermediate_transcript",
+            validation=ValidationResult(),
+            extraction_method="image_ocr",
+            raw_text="Name: Ali",
+            fields=[],
+        )
+        proposal = merge_documents([doc])
+        records = proposal.profile["document_records"]
+        assert records[0]["extraction_status"] == "partial"
+
+    def test_multi_doc_categories_accumulate(self):
+        doc1 = make_document_with_user_category(
+            "test1.pdf", "Entry Test", "entry_test_score", "entry_test_score",
+        )
+        doc2 = make_document_with_user_category(
+            "test2.pdf", "Entry Test", "entry_test_score", "entry_test_score",
+        )
+        proposal = merge_documents([doc1, doc2])
+        records = proposal.profile["document_records"]
+        entry_records = [r for r in records if r["category"] == "entry_test_score"]
+        assert len(entry_records) == 2
+
+    def test_legacy_documents_list_still_populated(self):
+        doc = make_document(
+            "hssc.txt",
+            "Academic Transcript (FSc/Intermediate)",
+            "intermediate_transcript",
+            aggregate=88.0,
+        )
+        proposal = merge_documents([doc])
+        assert "documents" in proposal.profile
+        assert len(proposal.profile["documents"]) > 0

@@ -25,21 +25,20 @@ def test_build_profile_from_parsed_returns_legacy_profile() -> None:
 
     profile = build_profile_from_parsed(parsed)
 
-    assert profile == {
-        "name": "Ali Hassan",
-        "father_name": None,
-        "qualification": "FSc Pre-Engineering",
-        "board": "BISE Lahore",
-        "aggregate": 88.4,
-        "total_marks": None,
-        "obtained_marks": None,
-        "roll_number": None,
-        "hssc_group": "Pre-Engineering",
-        "hssc_percentage": 88.4,
-        "ssc_percentage": None,
-        "test_scores": {},
-        "documents": ["Academic Transcript (FSc/Intermediate)"],
-    }
+    assert profile["name"] == "Ali Hassan"
+    assert profile["father_name"] is None
+    assert profile["qualification"] == "FSc Pre-Engineering"
+    assert profile["board"] == "BISE Lahore"
+    assert profile["aggregate"] == 88.4
+    assert profile["total_marks"] is None
+    assert profile["obtained_marks"] is None
+    assert profile["roll_number"] is None
+    assert profile["hssc_group"] == "Pre-Engineering"
+    assert profile["hssc_percentage"] == 88.4
+    assert profile["ssc_percentage"] is None
+    assert profile["test_scores"] == {}
+    assert profile["documents"] == ["Academic Transcript (FSc/Intermediate)"]
+    assert "document_records" in profile
 
 
 def test_build_profile_proposal_preserves_conflicts_and_warnings() -> None:

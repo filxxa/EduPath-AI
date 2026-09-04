@@ -24,7 +24,7 @@ EduPath AI combines student document information, structured university/program 
 
 ```
 .
-├── app.py                          # Main Streamlit entry point
+├── Home.py                         # Main Streamlit entry point
 ├── requirements.txt                # Python dependencies
 ├── README.md                       # This file
 ├── .gitignore                      # Git ignore rules
@@ -77,7 +77,7 @@ Ensure `eng` appears in the language list. Put Tesseract on `PATH`, or set `TESS
 4. Run the app:
 
 ```bash
-streamlit run app.py
+streamlit run Home.py
 ```
 
 ## Document extraction

@@ -245,13 +245,24 @@ def _normalize_document(text: str | None) -> str | None:
     return _normalize_by_aliases(text, DOCUMENT_ALIASES)
 
 
-def _student_document_categories(student_docs: list[str]) -> set[str]:
-    """Return the set of canonical document categories present in the profile."""
+def _student_document_categories(
+    student_docs: list[str],
+    label_overrides: dict[str, str] | None = None,
+) -> set[str]:
+    """Return the set of canonical document categories present in the profile.
+
+    If ``label_overrides`` is provided, document names matching its keys use
+    the override category instead of auto-classification via _normalize_document.
+    """
     categories: set[str] = set()
+    overrides = label_overrides or {}
     for doc in student_docs:
-        canonical = _normalize_document(doc)
-        if canonical:
-            categories.add(canonical)
+        if doc in overrides:
+            categories.add(overrides[doc])
+        else:
+            canonical = _normalize_document(doc)
+            if canonical:
+                categories.add(canonical)
     return categories
 
 
@@ -286,10 +297,18 @@ def check_eligibility(
     profile: dict[str, Any],
     program: dict[str, Any],
     today: date | None = None,
+    document_labels: dict[str, str] | None = None,
+    document_records: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Evaluate a student profile against a program's requirements.
 
     Returns a result dict with verdict, reasons, missing documents, and deadlines.
+    ``document_labels`` maps document names to canonical categories, overriding
+    auto-classification when present.
+    ``document_records`` is a list of structured document dicts (from
+    ``profile["document_records"]``) with a ``category`` key. When provided,
+    categories are derived from these records first, falling back to the
+    legacy ``documents`` + ``document_labels`` path for backward compatibility.
     """
     if today is None:
         today = date.today()
@@ -342,7 +361,15 @@ def check_eligibility(
             )
 
     # Required documents check (normalized categories)
-    student_doc_categories = _student_document_categories(student_docs)
+    if document_records:
+        student_doc_categories = {
+            rec["category"] for rec in document_records
+            if rec.get("category") and rec.get("extraction_status") != "failed"
+        }
+    else:
+        student_doc_categories = _student_document_categories(
+            student_docs, label_overrides=document_labels,
+        )
     for doc in required_documents:
         doc_name = doc["name"]
         # Only mandatory documents can make a student conditionally eligible.

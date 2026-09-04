@@ -4,6 +4,8 @@ from __future__ import annotations
 import streamlit as st
 
 from backend.state import ensure_eligibility, get_profile, get_selection, recalculate_eligibility
+from backend.document_status import has_document
+from backend.eligibility import _normalize_document
 from ui import (
     init_session_state,
     inject_theme,
@@ -108,15 +110,13 @@ if result:
 
     st.markdown("### Required Documents")
     req_docs = prog.get("requirements", {}).get("required_documents", [])
-    missing_document_names = {doc["name"] for doc in result["missing_documents"]}
-    student_docs = [d.lower() for d in profile.get("documents", [])]
     for doc in req_docs:
         name = doc["name"]
-        found = (
-            name not in missing_document_names
-            if doc.get("required", False)
-            else any(name.lower() in sd or sd in name.lower() for sd in student_docs)
-        )
+        canonical = _normalize_document(name)
+        if canonical:
+            found = has_document(profile, canonical)
+        else:
+            found = False
         icon = "✅" if found else "❌"
         color = "#047857" if found else "#B91C1C"
         st.markdown(

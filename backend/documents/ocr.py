@@ -6,6 +6,7 @@ import io
 import logging
 import os
 import shutil
+import time
 from typing import Any
 import warnings
 
@@ -31,6 +32,9 @@ MAX_IMAGE_PIXELS = 40_000_000
 MIN_OCR_CHARS = 15
 MIN_IMAGE_LONG_EDGE = 1500
 MAX_IMAGE_LONG_EDGE = 2400
+
+_AVAILABILITY_CACHE: tuple[bool, str | None, float] | None = None
+_AVAILABILITY_TTL_SECONDS = 60
 
 _WINDOWS_TESSERACT_PATHS = (
     r"C:\Program Files\Tesseract-OCR\tesseract.exe",
@@ -83,10 +87,21 @@ class OcrResult:
 
 
 def _availability() -> tuple[bool, str | None]:
-    """Check Tesseract availability without permanent caching."""
+    """Check Tesseract availability with 60-second TTL cache."""
+    global _AVAILABILITY_CACHE
+
+    now = time.monotonic()
+    if _AVAILABILITY_CACHE is not None:
+        cached_available, cached_message, cached_time = _AVAILABILITY_CACHE
+        if now - cached_time < _AVAILABILITY_TTL_SECONDS:
+            logger.debug("Tesseract availability check served from cache")
+            return cached_available, cached_message
+
     if pytesseract is None:
         logger.debug("Tesseract unavailable: Python dependencies not installed")
-        return False, "OCR Python dependencies are not installed."
+        result = (False, "OCR Python dependencies are not installed.")
+        _AVAILABILITY_CACHE = (result[0], result[1], now)
+        return result
 
     command = _find_tesseract()
     if command:
@@ -102,16 +117,22 @@ def _availability() -> tuple[bool, str | None]:
         logger.debug(f"Tesseract languages: {languages}")
         if OCR_LANGUAGE not in languages:
             logger.debug(f"Language '{OCR_LANGUAGE}' not available in Tesseract")
-            return False, "The English OCR language pack is not available."
+            result = (False, "The English OCR language pack is not available.")
+            _AVAILABILITY_CACHE = (result[0], result[1], now)
+            return result
     except Exception as e:
         logger.debug(f"Tesseract availability check failed: {e}")
-        return (
+        result = (
             False,
             "Tesseract OCR was not found. Install Tesseract or set TESSERACT_CMD.",
         )
+        _AVAILABILITY_CACHE = (result[0], result[1], now)
+        return result
 
     logger.debug("Tesseract availability check passed")
-    return True, None
+    result = (True, None)
+    _AVAILABILITY_CACHE = (result[0], result[1], now)
+    return result
 
 
 def tesseract_available() -> bool:

@@ -126,17 +126,32 @@ def _doc_id(chunk: PolicyChunk) -> str:
     return hashlib.sha256(key.encode("utf-8")).hexdigest()
 
 
+_embedding_fn_cache: Any | None = None
+
+
 def _embedding_function() -> Any:
     from chromadb.utils.embedding_functions import SentenceTransformerEmbeddingFunction
 
-    return SentenceTransformerEmbeddingFunction(model_name=EMBEDDING_MODEL)
+    global _embedding_fn_cache
+    if _embedding_fn_cache is not None:
+        return _embedding_fn_cache
+    _embedding_fn_cache = SentenceTransformerEmbeddingFunction(model_name=EMBEDDING_MODEL)
+    return _embedding_fn_cache
+
+
+_client_cache: Any | None = None
 
 
 def get_persistent_client() -> Any:
     import chromadb
 
+    global _client_cache
+    if _client_cache is not None:
+        return _client_cache
+
     INDEX_DIR.mkdir(parents=True, exist_ok=True)
-    return chromadb.PersistentClient(path=str(INDEX_DIR))
+    _client_cache = chromadb.PersistentClient(path=str(INDEX_DIR))
+    return _client_cache
 
 
 def build_collection(client: Any | None = None) -> Any:

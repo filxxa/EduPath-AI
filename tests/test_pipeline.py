@@ -413,3 +413,123 @@ def test_end_to_end_multi_document_pipeline_with_merged_profile() -> None:
     conflict_fields = {c.field for c in proposal.conflicts}
     assert "board" in conflict_fields
     assert "aggregate" in conflict_fields
+
+
+# ── user_category pass-through ──────────────────────────────────────
+
+
+def test_process_upload_passes_user_category_through() -> None:
+    doc = process_upload("scan.pdf", INTERMEDIATE_CONTENT, user_category="intermediate_transcript")
+
+    assert doc.user_category == "intermediate_transcript"
+    assert doc.effective_category == "intermediate_transcript"
+
+
+def test_process_upload_user_category_overrides_auto_for_effective() -> None:
+    doc = process_upload("cnic.txt", b"Name: Ali\nCNIC 12345", user_category="cnic_bform")
+
+    assert doc.user_category == "cnic_bform"
+    assert doc.effective_category == "cnic_bform"
+
+
+def test_process_upload_without_user_category_uses_auto() -> None:
+    doc = process_upload("hssc_transcript.txt", INTERMEDIATE_CONTENT)
+
+    assert doc.user_category is None
+    assert doc.effective_category == "intermediate_transcript"
+
+
+def test_process_upload_ocr_disagreement_warning() -> None:
+    doc = process_upload(
+        "hssc_transcript.txt",
+        INTERMEDIATE_CONTENT,
+        user_category="cnic_bform",
+    )
+
+    assert doc.user_category == "cnic_bform"
+    assert doc.canonical_category == "intermediate_transcript"
+    warnings = doc.validation.warnings
+    assert any("Auto-classification" in w for w in warnings)
+
+
+def test_process_upload_no_warning_when_user_matches_auto() -> None:
+    doc = process_upload(
+        "hssc_transcript.txt",
+        INTERMEDIATE_CONTENT,
+        user_category="intermediate_transcript",
+    )
+
+    assert not any("Auto-classification" in w for w in doc.validation.warnings)
+
+
+def test_process_uploads_with_user_categories_dict() -> None:
+    docs = process_uploads(
+        [
+            ("hssc_transcript.txt", INTERMEDIATE_CONTENT),
+            ("cnic.txt", b"Name: Ali\nCNIC 12345"),
+        ],
+        user_categories={
+            "hssc_transcript.txt": "intermediate_transcript",
+            "cnic.txt": "cnic_bform",
+        },
+    )
+
+    assert docs[0].user_category == "intermediate_transcript"
+    assert docs[0].effective_category == "intermediate_transcript"
+    assert docs[1].user_category == "cnic_bform"
+    assert docs[1].effective_category == "cnic_bform"
+
+
+def test_process_uploads_partial_user_categories() -> None:
+    docs = process_uploads(
+        [
+            ("hssc_transcript.txt", INTERMEDIATE_CONTENT),
+            ("cnic.txt", b"Name: Ali\nCNIC 12345"),
+        ],
+        user_categories={"cnic.txt": "cnic_bform"},
+    )
+
+    assert docs[0].user_category is None
+    assert docs[0].effective_category == "intermediate_transcript"
+    assert docs[1].user_category == "cnic_bform"
+
+
+def test_process_upload_accepts_raw_bytes_without_seek() -> None:
+    """Regression: raw bytes must never reach code that calls .seek().
+
+    The upload page converts UploadedFile → (name, bytes) via getvalue()
+    before passing to the pipeline.  The pipeline must accept plain bytes
+    without attempting file-object methods on them.
+    """
+    raw = b"Name: Test Student\nFSc Pre-Engineering\nBISE Lahore\nAggregate: 79.0"
+    assert isinstance(raw, bytes)
+
+    doc = process_upload("hssc_transcript.txt", raw, user_category="intermediate_transcript")
+
+    assert doc.validation.valid
+    assert doc.field_value("aggregate") == 79.0
+    assert doc.field_value("qualification") == "FSc Pre-Engineering"
+    assert doc.user_category == "intermediate_transcript"
+
+
+def test_upload_page_pattern_bytes_tuples_through_pipeline() -> None:
+    """Simulates the exact upload page flow: (name, getvalue()) tuples → process_uploads."""
+    category_uploads = {
+        "intermediate_transcript": [("hssc.txt", INTERMEDIATE_CONTENT)],
+        "cnic_bform": [("cnic.txt", b"Name: Ali Hassan\nCNIC 12345")],
+    }
+
+    all_uploads: list[tuple[str, bytes]] = []
+    user_categories: dict[str, str] = {}
+    for cat_key, files in category_uploads.items():
+        for fname, fbytes in files:
+            assert isinstance(fbytes, bytes)
+            all_uploads.append((fname, fbytes))
+            user_categories[fname] = cat_key
+
+    docs = process_uploads(all_uploads, user_categories=user_categories)
+
+    assert len(docs) == 2
+    assert docs[0].effective_category == "intermediate_transcript"
+    assert docs[0].field_value("name") == "Ali Hassan"
+    assert docs[1].effective_category == "cnic_bform"

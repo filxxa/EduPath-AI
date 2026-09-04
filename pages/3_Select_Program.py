@@ -73,8 +73,7 @@ for uni in universities:
             btn_type = "secondary" if selected else "primary"
             if c2.button(btn_label, key=f"select_{uni['id']}_{prog['id']}", use_container_width=True, type=btn_type):
                 set_selection(uni["id"], prog["id"])
-                st.success(f"Selected {uni['name']} — {prog['name']}")
-                st.rerun()
+                st.switch_page("pages/4_Eligibility_Check.py")
 
 if match_count == 0:
     st.info("No programs match your filters. Try selecting 'All' for city or field.")

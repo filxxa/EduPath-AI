@@ -62,12 +62,18 @@ class ExtractedDocument:
     extraction_method: str
     raw_text: str
     fields: list[ExtractedField]
+    user_category: str | None = None
     ocr_note: str | None = None
     is_scanned_pdf: bool | None = None
     ocr_confidence: float | None = None
     page_count: int | None = None
     pages_processed: int | None = None
     ocr_attempts: list[dict[str, Any]] = field(default_factory=list)
+
+    @property
+    def effective_category(self) -> str | None:
+        """User-selected category if set, otherwise auto-detected."""
+        return self.user_category or self.canonical_category
 
     def to_dict(self) -> dict[str, Any]:
         """Serialize to a dict that preserves the legacy parser contract."""
@@ -89,6 +95,7 @@ class ExtractedDocument:
             "filename": self.filename,
             "document_type": self.document_type,
             "canonical_category": self.canonical_category,
+            "user_category": self.user_category,
             "validation": {
                 "valid": self.validation.valid,
                 "errors": self.validation.errors,
@@ -121,6 +128,7 @@ class ExtractedDocument:
             extraction_method=data.get("extraction_method", "unknown"),
             raw_text=data.get("raw_text", ""),
             fields=[ExtractedField.from_dict(item) for item in data.get("fields", [])],
+            user_category=data.get("user_category"),
             ocr_note=data.get("ocr_note"),
             is_scanned_pdf=data.get("is_scanned_pdf"),
             ocr_confidence=data.get("ocr_confidence"),
