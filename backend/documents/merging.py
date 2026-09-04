@@ -271,14 +271,28 @@ def merge_documents(docs: list[ExtractedDocument]) -> MergeProposal:
         if (doc.validation.valid or has_fields) and doc.effective_category and label not in documents:
             documents.append(label)
 
-    # Collect test scores extracted from score-card documents. Keyed by the
+    # Collect test scores extracted from entry-test documents. Keyed by the
     # normalised test name so merge_profile can merge them without dropping
-    # previously-recorded scores.
+    # previously-recorded scores. Only documents classified as entry_test_score
+    # contribute — academic transcripts may contain incidental test references
+    # that should not pollute the student's test score profile.
     test_scores: dict[str, str] = {}
+    test_score_records: list[dict[str, Any]] = []
     for doc in docs:
+        if doc.effective_category != "entry_test_score":
+            continue
         ts = doc.field_value("test_score")
         if isinstance(ts, dict) and ts.get("test"):
-            test_scores[ts["test"]] = ts.get("score", "")
+            score_val = ts.get("score") or ""
+            test_scores[ts["test"]] = score_val
+            test_score_records.append({
+                "test_name": ts["test"],
+                "score": score_val,
+                "total_score": ts.get("total_score"),
+                "test_date": ts.get("test_date"),
+                "roll_number": ts.get("roll_number") or doc.field_value("roll_number"),
+                "source_document": doc.filename,
+            })
 
     document_records = _build_document_records(docs)
 
@@ -296,6 +310,7 @@ def merge_documents(docs: list[ExtractedDocument]) -> MergeProposal:
         "documents": documents,
         "document_records": document_records,
         "test_scores": test_scores,
+        "test_score_records": test_score_records,
     }
 
     # Surface a warning if no academic aggregate could be extracted.

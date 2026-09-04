@@ -325,14 +325,19 @@ def extract_aggregate(text: str) -> float | None:
     return None
 
 
-def extract_test_score(text: str) -> dict[str, str] | None:
-    """Extract a test name and score/roll number if present."""
+def extract_test_score(text: str) -> dict[str, str | None] | None:
+    """Extract a test name, score, total score, date, and roll number if present."""
     test_patterns = [
+        r"\bmuet\b(?:\s+computer[\s-]*based[\s-]*pre[\s-]*admission[\s-]*test)?",
+        r"\bfast[\s-]*(?:nuces|university)[\s-]*(?:entry[\s-]*)?test\b",
+        r"\bnts[\s-]*nat(?:[\s-]*(?:ie|ics|icom|igs))?\b",
+        r"\bnat[\s-]*(?:ie|ics|icom|igs)\b",
         r"\b(?:nts|nat)\b\s*(?:ie)?\s*(?:ics)?",
         r"\bnust\s*entry\s*test\b",
-        r"\bnet\b",
-        r"\becat\b",
+        r"\bnet\b(?:\s+(?:engineering|business|architecture|natural\s+sciences|applied\s+sciences))?",
+        r"\becat\b(?:\s*\d{4})?",
         r"\bsat\b",
+        r"\bact\b",
         r"\blcat\b",
     ]
     found_test: str | None = None
@@ -349,12 +354,52 @@ def extract_test_score(text: str) -> dict[str, str] | None:
     score_patterns = [
         r"score[\s:]*(\d+(?:\.\d+)?)",
         r"marks[\s:]*(\d+(?:\.\d+)?)",
-        r"roll\s*no\.?[\s:]*([\w\-]+)",
         r"percent(?:ile)?[\s:]*(\d+(?:\.\d+)?)",
     ]
     score_match = _find_first(score_patterns, text)
     score = score_match.group(1).strip() if score_match else ""
-    return {"test": found_test, "score": score}
+
+    roll_patterns = [
+        r"roll\s*(?:no\.?|number)[\s:]*([\w\-]+)",
+        r"seat\s*(?:no\.?|number)[\s:]*([\w\-]+)",
+        r"registration\s*(?:no\.?|number)[\s:]*([\w\-]+)",
+    ]
+    roll_match = _find_first(roll_patterns, text)
+    roll_number = roll_match.group(1).strip() if roll_match else None
+
+    total_patterns = [
+        r"(?:total|out\s+of|max(?:imum)?)\s*(?:score|marks)?[\s:]*(\d+)",
+        r"(\d+)\s*/\s*(\d+)",
+    ]
+    total_score: str | None = None
+    total_match = _find_first(total_patterns, text)
+    if total_match:
+        groups = total_match.groups()
+        if len(groups) == 2 and groups[1]:
+            total_score = groups[1].strip()
+        else:
+            total_score = groups[0].strip()
+
+    date_patterns = [
+        r"(?:test\s+date|date\s+of\s+(?:test|exam))[\s:]*(\d{1,2}[\s/-]\d{1,2}[\s/-]\d{2,4})",
+        r"(?:test\s+date|date\s+of\s+(?:test|exam))[\s:]*((?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\w*\s+\d{1,2},?\s+\d{4})",
+    ]
+    test_date: str | None = None
+    date_match = _find_first(date_patterns, text)
+    if date_match:
+        test_date = date_match.group(1).strip()
+
+    if not score and not roll_number:
+        return None
+
+    result: dict[str, str | None] = {
+        "test": found_test,
+        "score": score or None,
+        "total_score": total_score,
+        "test_date": test_date,
+        "roll_number": roll_number,
+    }
+    return result
 
 
 _ROLL_NUMBER_LABEL = re.compile(

@@ -191,15 +191,35 @@ with c2:
     with st.container(border=True):
         st.markdown("### 📝 Admission Test Scores")
         test_scores = profile.get("test_scores", {})
+        test_score_records = profile.get("test_score_records", [])
         if test_scores:
             for test, score in test_scores.items():
-                st.markdown(f'<div class="ep-list-item">✅ <strong>{test}</strong>: {score}</div>', unsafe_allow_html=True)
+                record = next(
+                    (r for r in test_score_records if r.get("test_name") == test),
+                    None,
+                )
+                total = record.get("total_score") if record else None
+                if total:
+                    display = f"{score}/{total}"
+                else:
+                    display = str(score)
+                st.markdown(
+                    f'<div class="ep-list-item">&#x2705; <strong>{test}</strong>: {display}</div>',
+                    unsafe_allow_html=True,
+                )
         else:
             st.info("No test scores added yet.")
 
         with st.expander("Add a test score"):
+            from backend.test_names import get_test_name_options
+
+            options = ["(Other)"] + get_test_name_options()
             tcol1, tcol2 = st.columns(2)
-            test_name = tcol1.text_input("Test name", key="test_name")
+            choice = tcol1.selectbox("Test name", options=options, key="test_name_select")
+            if choice == "(Other)":
+                test_name = tcol1.text_input("Custom test name", key="test_name_custom")
+            else:
+                test_name = choice
             test_score = tcol2.text_input("Score / Roll number", key="test_score")
             if st.button("Add Test Score", key="add_test") and test_name.strip():
                 add_manual_test_score(test_name, test_score)

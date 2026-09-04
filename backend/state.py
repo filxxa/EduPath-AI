@@ -117,7 +117,10 @@ def add_manual_test_score(test_name: str, score: float | str) -> dict[str, Any]:
     test_name = test_name.strip()
     if not test_name:
         return get_profile()
-    return update_profile({"test_scores": {test_name: score}}, source="manual")
+    updates: dict[str, Any] = {"test_scores": {test_name: score}}
+    record = {"test_name": test_name, "score": score, "source_document": "manual entry"}
+    updates["test_score_records"] = [record]
+    return update_profile(updates, source="manual")
 
 
 def get_document_labels() -> dict[str, str]:
@@ -349,7 +352,10 @@ def build_checklist() -> list[dict[str, Any]]:
     # Admission test
     test_name = (result or {}).get("admission_test") or prog.get("requirements", {}).get("admission_test")
     if test_name:
-        test_done = test_name in (profile.get("test_scores") or {})
+        from backend.test_names import matches_test_name
+
+        student_keys = set((profile.get("test_scores") or {}).keys())
+        test_done = matches_test_name(student_keys, test_name)
         items.append({
             "key": f"test_{test_name}",
             "label": f"{test_name} score recorded",
@@ -410,12 +416,26 @@ def build_next_actions() -> list[dict[str, Any]]:
 
     if result.get("test_missing"):
         test_name = result.get("admission_test") or "the required admission test"
-        actions.append({
-            "priority": 5,
-            "title": f"Register for {test_name}",
-            "description": "Add your official score to the Profile once you have it.",
-            "target": "pages/2_Profile.py",
-        })
+        from backend.document_status import get_document_status
+
+        test_status = get_document_status(profile, "entry_test_score")
+        if test_status["uploaded"] and test_status["extraction_status"] != "extracted":
+            actions.append({
+                "priority": 5,
+                "title": "Verify your entry test score extraction",
+                "description": (
+                    "A test score document was uploaded but data extraction was "
+                    "incomplete. Add your score manually on the Profile page."
+                ),
+                "target": "pages/2_Profile.py",
+            })
+        else:
+            actions.append({
+                "priority": 5,
+                "title": f"Register for {test_name}",
+                "description": "Add your official score to the Profile once you have it.",
+                "target": "pages/2_Profile.py",
+            })
 
     verdict = result.get("verdict")
     if verdict == "NOT ELIGIBLE":

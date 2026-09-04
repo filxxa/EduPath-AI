@@ -23,6 +23,7 @@ ELIGIBILITY_FIELDS: tuple[str, ...] = (
     "documents",
     "document_records",
     "test_scores",
+    "test_score_records",
 )
 
 
@@ -48,6 +49,7 @@ def default_profile() -> dict[str, Any]:
         "documents": [],
         "document_records": [],
         "test_scores": {},
+        "test_score_records": [],
         "notes": "",
         "field_sources": {},
     }
@@ -134,6 +136,21 @@ def merge_profile(
                 sources[f"test_scores.{name}"] = source
         new_profile["test_scores"] = test_existing
 
+    tsr_existing = list(new_profile.get("test_score_records") or [])
+    tsr_incoming = updates.get("test_score_records")
+    if isinstance(tsr_incoming, list) and tsr_incoming:
+        if source == "manual" or sources.get("test_score_records") != "manual":
+            existing_names = {r.get("test_name") for r in tsr_existing}
+            for rec in tsr_incoming:
+                name = rec.get("test_name")
+                if name in existing_names:
+                    tsr_existing = [
+                        r for r in tsr_existing if r.get("test_name") != name
+                    ]
+                tsr_existing.append(rec)
+                existing_names.add(name)
+        new_profile["test_score_records"] = tsr_existing
+
     rec_existing = list(new_profile.get("document_records") or [])
     rec_incoming = updates.get("document_records")
     if isinstance(rec_incoming, list) and rec_incoming:
@@ -150,7 +167,7 @@ def merge_profile(
                     rec_existing.append(rec)
         new_profile["document_records"] = rec_existing
 
-    skip = {"documents", "document_records", "test_scores", "field_sources"}
+    skip = {"documents", "document_records", "test_scores", "test_score_records", "field_sources"}
     for key, value in updates.items():
         if key in skip:
             continue

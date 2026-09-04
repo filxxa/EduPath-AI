@@ -384,7 +384,14 @@ def check_eligibility(
             conditional = True
 
     # Admission test check
-    test_missing = admission_test and admission_test not in student_test_scores
+    from backend.test_names import matches_test_name
+
+    if admission_test:
+        test_missing = not matches_test_name(
+            set(student_test_scores.keys()), admission_test
+        )
+    else:
+        test_missing = False
     if test_missing:
         conditional = True
         reasons.append(

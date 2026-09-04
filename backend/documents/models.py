@@ -194,3 +194,36 @@ class MergeProposal:
             conflicts=[Conflict.from_dict(item) for item in data.get("conflicts", [])],
             warnings=data.get("warnings", []),
         )
+
+
+@dataclass
+class TestScoreRecord:
+    """Structured record for an admission test score."""
+
+    test_name: str
+    score: str | float | None = None
+    total_score: int | str | None = None
+    test_date: str | None = None
+    roll_number: str | None = None
+    source_document: str | None = None
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "test_name": self.test_name,
+            "score": self.score,
+            "total_score": self.total_score,
+            "test_date": self.test_date,
+            "roll_number": self.roll_number,
+            "source_document": self.source_document,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> TestScoreRecord:
+        return cls(
+            test_name=data.get("test_name", ""),
+            score=data.get("score"),
+            total_score=data.get("total_score"),
+            test_date=data.get("test_date"),
+            roll_number=data.get("roll_number"),
+            source_document=data.get("source_document"),
+        )

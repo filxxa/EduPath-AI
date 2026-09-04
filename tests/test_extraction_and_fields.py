@@ -95,7 +95,7 @@ def test_prefers_aggregate_label_over_unrelated_percentages() -> None:
 def test_extracts_test_score() -> None:
     result = extract_test_score("NAT Score: 89")
 
-    assert result == {"test": "NAT", "score": "89"}
+    assert result == {"test": "NAT", "score": "89", "total_score": None, "test_date": None, "roll_number": None}
 
 
 def test_does_not_treat_nationality_as_an_entry_test() -> None:
@@ -117,7 +117,7 @@ def test_builds_structured_fields() -> None:
         "aggregate": 88.4,
         "hssc_percentage": 88.4,
         "hssc_group": "Pre-Engineering",
-        "test_score": {"test": "NAT", "score": "89"},
+        "test_score": {"test": "NAT", "score": "89", "total_score": None, "test_date": None, "roll_number": None},
     }
     assert all(field.confidence is None for field in fields)
 

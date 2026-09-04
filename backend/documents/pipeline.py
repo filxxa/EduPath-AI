@@ -12,6 +12,12 @@ from backend.documents.validation import validate_upload
 
 logger = logging.getLogger(__name__)
 
+_USER_ROUTED_CATEGORIES = {
+    "intermediate_transcript",
+    "matric_certificate",
+    "entry_test_score",
+}
+
 
 def process_upload(
     filename: str,
@@ -65,9 +71,7 @@ def process_upload(
             )
 
     routing_category = user_category or auto_category
-    if routing_category and routing_category not in (
-        "intermediate_transcript", "matric_certificate",
-    ):
+    if routing_category and routing_category not in _USER_ROUTED_CATEGORIES:
         routing_category_for_extract = auto_category
     else:
         routing_category_for_extract = routing_category

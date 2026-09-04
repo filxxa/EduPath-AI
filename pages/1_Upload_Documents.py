@@ -85,8 +85,7 @@ def _process_new_uploads(cat_key: str, files_list: list) -> list[str]:
             messages.append(f"`{f.name}` already processed — skipped.")
             continue
 
-        cat_label = UPLOAD_CATEGORIES.get(cat_key, {}).get("label", cat_key)
-        with st.spinner(f"Processing {cat_label}… running OCR and extracting information from {f.name}"):
+        with st.spinner(f"Processing {f.name}..."):
             t0 = _time.perf_counter()
             doc = process_upload(f.name, content, user_category=cat_key)
             elapsed_ms = round((_time.perf_counter() - t0) * 1000, 2)
