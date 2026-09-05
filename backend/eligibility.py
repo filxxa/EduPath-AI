@@ -115,6 +115,9 @@ DOCUMENT_ALIASES: dict[str, list[str]] = {
         "fsc a levels transcript",
         "fsc intermediate",
         "intermediate fsc",
+        "hsc i hsc ii",
+        "dae equivalent",
+        "hsc certificate",
     ],
     "cnic_bform": [
         "cnic",
@@ -161,6 +164,24 @@ DOCUMENT_ALIASES: dict[str, list[str]] = {
     "statement_of_purpose": [
         "statement of purpose",
         "sop",
+    ],
+    "character_certificate": [
+        "character certificate",
+        "character",
+        "good conduct",
+        "conduct certificate",
+        "moral certificate",
+    ],
+    "bonafide": [
+        "bonafide certificate",
+        "bonafide",
+        "bona fide",
+        "bona fide certificate",
+    ],
+    "permanent_residence_certificate": [
+        "permanent residence certificate",
+        "prc",
+        "permanent residence",
     ],
 }
 
@@ -362,10 +383,18 @@ def check_eligibility(
 
     # Required documents check (normalized categories)
     if document_records:
-        student_doc_categories = {
-            rec["category"] for rec in document_records
-            if rec.get("category") and rec.get("extraction_status") != "failed"
-        }
+        student_doc_categories = set()
+        for rec in document_records:
+            if rec.get("extraction_status") == "failed":
+                continue
+            cat = rec.get("category")
+            if cat:
+                student_doc_categories.add(cat)
+            label = rec.get("document_label")
+            if label:
+                label_cat = _normalize_document(label)
+                if label_cat:
+                    student_doc_categories.add(label_cat)
     else:
         student_doc_categories = _student_document_categories(
             student_docs, label_overrides=document_labels,

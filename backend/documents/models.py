@@ -63,6 +63,7 @@ class ExtractedDocument:
     raw_text: str
     fields: list[ExtractedField]
     user_category: str | None = None
+    document_label: str | None = None
     ocr_note: str | None = None
     is_scanned_pdf: bool | None = None
     ocr_confidence: float | None = None
@@ -96,6 +97,7 @@ class ExtractedDocument:
             "document_type": self.document_type,
             "canonical_category": self.canonical_category,
             "user_category": self.user_category,
+            "document_label": self.document_label,
             "validation": {
                 "valid": self.validation.valid,
                 "errors": self.validation.errors,
@@ -129,6 +131,7 @@ class ExtractedDocument:
             raw_text=data.get("raw_text", ""),
             fields=[ExtractedField.from_dict(item) for item in data.get("fields", [])],
             user_category=data.get("user_category"),
+            document_label=data.get("document_label"),
             ocr_note=data.get("ocr_note"),
             is_scanned_pdf=data.get("is_scanned_pdf"),
             ocr_confidence=data.get("ocr_confidence"),

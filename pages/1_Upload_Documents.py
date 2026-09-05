@@ -11,8 +11,6 @@ import time as _time
 import streamlit as st
 
 from backend.documents.categories import (
-    DISPLAY_ORDER,
-    MULTI_DOC_CATEGORIES,
     UPLOAD_CATEGORIES,
     UPLOAD_GROUPS,
 )
@@ -20,7 +18,6 @@ from backend.documents import (
     DocumentCache,
     fingerprint,
     process_uploads_cached,
-    propose_profile,
 )
 from backend.documents.cache import CacheStats
 from backend.state import (
@@ -56,6 +53,9 @@ if "_doc_cache_store" not in st.session_state:
 doc_cache = DocumentCache(st.session_state["_doc_cache_store"])
 
 processed: dict[str, dict] = st.session_state.setdefault("processed_documents", {})
+if "other_document_labels" not in st.session_state:
+    st.session_state["other_document_labels"] = {}
+other_labels: dict[str, str] = st.session_state["other_document_labels"]
 
 ALLOWED_TYPES = ["txt", "md", "pdf", "png", "jpg", "jpeg"]
 
@@ -159,6 +159,11 @@ for group_name, category_keys in UPLOAD_GROUPS.items():
                             else:
                                 category_uploads[cat_key] = new_files
                         else:
+                            for fname, fbytes in (existing or []):
+                                old_fp = fingerprint(fbytes)
+                                old_key = f"{old_fp}:{cat_key}"
+                                processed.pop(old_key, None)
+                                doc_cache.invalidate(fbytes, cat_key)
                             category_uploads[cat_key] = new_files[-1:]
 
                         _process_new_uploads(cat_key, files_list)
@@ -225,6 +230,20 @@ if processed:
             if doc_dict.get("ocr_note"):
                 st.info(doc_dict["ocr_note"])
 
+            if cat_key == "other":
+                current_label = other_labels.get(cache_key, doc_dict.get("document_label", ""))
+                new_label = st.text_input(
+                    "Document label (e.g., Character Certificate, PRC)",
+                    value=current_label,
+                    key=f"label_{cache_key}",
+                    help="Give this document a meaningful name so it can be recognized by eligibility checks.",
+                )
+                new_label = (new_label or "").strip()
+                current_label = (current_label or "").strip()
+                if new_label != current_label:
+                    other_labels[cache_key] = new_label
+                    doc_dict["document_label"] = new_label
+
             if method in {"image_ocr", "pdf_ocr", "pdf_hybrid", "pdf_text"}:
                 with st.expander("Debug: OCR Diagnostics & Raw Text"):
                     attempts = doc_dict.get("ocr_attempts", [])
@@ -282,7 +301,7 @@ with st.container(border=True):
         qualification = col2.selectbox(
             "Qualification",
             qualification_options,
-            index=0 if not profile.get("qualification") else qualification_options.index(profile.get("qualification")),
+            index=qualification_options.index(profile.get("qualification")) if profile.get("qualification") in qualification_options else 0,
         )
         board_options = ["FBISE Islamabad", "BISE Lahore", "BISE Karachi", "BISE Rawalpindi", "Other"]
         board = col1.selectbox(

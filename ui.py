@@ -158,14 +158,6 @@ EP_COLORS: dict[str, str] = {
     "border": "#E6E5F0",
 }
 
-STEP_PAGES: list[str] = [
-    "pages/1_Upload_Documents.py",
-    "pages/2_Profile.py",
-    "pages/3_Select_Program.py",
-    "pages/4_Eligibility_Check.py",
-    "pages/5_AI_Advisor.py",
-]
-
 _EP_CSS = """
 <style>
     .block-container {

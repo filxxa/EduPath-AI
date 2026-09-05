@@ -73,6 +73,11 @@ def extract_text(filename: str, content: bytes) -> dict[str, Any]:
         ]
         if ocr.status == "success":
             warnings = [ocr.message] if ocr.message else []
+            if ocr.confidence is not None and ocr.confidence < 50:
+                warnings.append(
+                    f"OCR confidence is low ({ocr.confidence:.0f}%). "
+                    "Please verify all extracted details carefully."
+                )
             return _result(
                 raw_text=ocr.raw_text,
                 extraction_method="image_ocr",

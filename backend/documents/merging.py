@@ -360,6 +360,7 @@ def _build_document_records(docs: list[ExtractedDocument]) -> list[dict[str, Any
             "filename": doc.filename,
             "category": category,
             "document_type": doc.document_type,
+            "document_label": doc.document_label,
             "extraction_status": extraction_status,
             "fields": fields_dict,
             "ocr_confidence": doc.ocr_confidence,

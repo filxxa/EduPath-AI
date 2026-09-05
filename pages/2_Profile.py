@@ -162,9 +162,15 @@ with c1:
                         filenames = ", ".join(status["filenames"])
                         extraction = status["extraction_status"]
                         icon = "✅" if extraction in ("extracted", "partial") else "⚠️"
+                        label_suffix = ""
+                        if cat_key == "other":
+                            matching = [r for r in records if r.get("category") == "other" and r.get("filename") in status["filenames"]]
+                            doc_labels = [r.get("document_label") for r in matching if r.get("document_label")]
+                            if doc_labels:
+                                label_suffix = f' — {", ".join(doc_labels)}'
                         st.markdown(
                             f'<div class="ep-list-item">{icon} <strong>{cat_label}</strong>: {filenames}'
-                            f' <em>({extraction})</em></div>',
+                            f'{label_suffix} <em>({extraction})</em></div>',
                             unsafe_allow_html=True,
                         )
                     else:

@@ -66,6 +66,8 @@ BOARD_HINTS: dict[str, str] = {
 
 def _clean_text(text: str) -> str:
     """Normalize text for matching."""
+    if not text:
+        return ""
     text = text.lower()
     text = re.sub(r"[^\w\s]", " ", text)
     return " ".join(text.split())

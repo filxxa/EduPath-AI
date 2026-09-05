@@ -6,6 +6,7 @@ __pycache__/
 # Virtual environments
 venv/
 .env/
+.env
 .venv/
 
 # Streamlit secrets
@@ -24,3 +25,7 @@ data/sessions/
 .vscode/
 .idea/
 *.swp
+
+# Streamlit runtime artifacts
+streamlit*.log
+*.pid

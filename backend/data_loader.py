@@ -22,8 +22,17 @@ def _repo_root() -> Path:
 def load_universities(path: Path | None = None) -> dict[str, Any]:
     if path is None:
         path = _repo_root() / "data" / "universities.json"
-    with open(path, "r", encoding="utf-8") as f:
-        return json.load(f)
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except FileNotFoundError:
+        import logging
+        logging.getLogger(__name__).error("University data file not found: %s", path)
+        return {"universities": []}
+    except (json.JSONDecodeError, OSError) as exc:
+        import logging
+        logging.getLogger(__name__).error("Failed to load university data: %s", exc)
+        return {"universities": []}
 
 
 def get_university(universities_data: dict[str, Any], university_id: str) -> dict[str, Any] | None:

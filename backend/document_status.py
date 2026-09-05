@@ -13,15 +13,32 @@ def get_document_records(profile: dict[str, Any]) -> list[dict[str, Any]]:
     return list(profile.get("document_records") or [])
 
 
+def _label_matches_category(record: dict[str, Any], category: str) -> bool:
+    """Check if a document record's label normalizes to the given category."""
+    label = record.get("document_label")
+    if not label:
+        return False
+    from backend.eligibility import _normalize_document
+    label_cat = _normalize_document(label)
+    return label_cat == category
+
+
 def has_document(profile: dict[str, Any], category: str) -> bool:
     """Check if a document of the given category exists in the profile.
 
     Checks ``document_records`` first (new path), then falls back to the
     legacy ``documents + document_labels`` combination.
+    For "other" category documents, the document_label is used to determine
+    if the document satisfies the requested category.
     """
     records = get_document_records(profile)
     if records:
-        return any(r.get("category") == category for r in records)
+        return any(
+            (r.get("category") == category
+             or (r.get("category") == "other" and _label_matches_category(r, category)))
+            and r.get("extraction_status") != "failed"
+            for r in records
+        )
 
     docs = [d for d in profile.get("documents", []) if isinstance(d, str)]
     if docs:
@@ -77,10 +94,24 @@ def get_document_status(
 
 
 def get_uploaded_categories(profile: dict[str, Any]) -> set[str]:
-    """Return all categories with at least one uploaded document."""
+    """Return all categories with at least one successfully extracted document."""
     records = get_document_records(profile)
     if records:
-        return {r["category"] for r in records if r.get("category")}
+        cats: set[str] = set()
+        for r in records:
+            if r.get("extraction_status") == "failed":
+                continue
+            cat = r.get("category")
+            if cat:
+                cats.add(cat)
+            if cat == "other":
+                label = r.get("document_label")
+                if label:
+                    from backend.eligibility import _normalize_document
+                    label_cat = _normalize_document(label)
+                    if label_cat:
+                        cats.add(label_cat)
+        return cats
 
     docs = [d for d in profile.get("documents", []) if isinstance(d, str)]
     if docs:

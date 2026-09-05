@@ -151,6 +151,8 @@ CONTENT_HINTS: dict[str, list[str]] = {
 
 def _clean_text(text: str) -> str:
     """Normalize text for matching: lowercase, collapse spaces, keep letters/numbers."""
+    if not text:
+        return ""
     text = text.lower()
     text = re.sub(r"[^\w\s]|_", " ", text)
     return " ".join(text.split())

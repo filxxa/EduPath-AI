@@ -440,6 +440,13 @@ def test_process_upload_without_user_category_uses_auto() -> None:
 
 
 def test_process_upload_ocr_disagreement_warning() -> None:
+    """Auto-classification mismatch is logged, not warned.
+    
+    When the user explicitly selects a category, that selection is authoritative.
+    The mismatch with auto-classification is logged at INFO level for debugging,
+    but should NOT appear in validation.warnings (which would trigger a yellow
+    warning icon in the UI for successfully processed documents).
+    """
     doc = process_upload(
         "hssc_transcript.txt",
         INTERMEDIATE_CONTENT,
@@ -448,8 +455,8 @@ def test_process_upload_ocr_disagreement_warning() -> None:
 
     assert doc.user_category == "cnic_bform"
     assert doc.canonical_category == "intermediate_transcript"
-    warnings = doc.validation.warnings
-    assert any("Auto-classification" in w for w in warnings)
+    # Auto-classification mismatch should NOT be in validation warnings
+    assert not any("Auto-classification" in w for w in doc.validation.warnings)
 
 
 def test_process_upload_no_warning_when_user_matches_auto() -> None:

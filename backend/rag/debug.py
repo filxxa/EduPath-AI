@@ -17,7 +17,7 @@ import sys
 
 from backend.rag import ask, build_index, is_available
 from backend.rag.config import POLICIES_DIR, UNIVERSITIES_PATH
-from backend.rag.indexer import build_collection, get_persistent_client, index_policies
+from backend.rag.indexer import build_collection, get_persistent_client
 from backend.rag.prompter import build_prompt
 from backend.rag.retriever import get_retriever
 

@@ -90,7 +90,9 @@ def answer_question(question: str, profile: dict[str, Any], result: dict[str, An
         deadline = result.get("application_deadline")
         days = result.get("days_remaining")
         if deadline:
-            return f"The application deadline for **{program['name']}** is **{deadline}** ({days} days from today)."
+            if days is not None:
+                return f"The application deadline for **{program['name']}** is **{deadline}** ({days} days from today)."
+            return f"The application deadline for **{program['name']}** is **{deadline}**."
         return "I don't have a deadline on file for this program. Please check the official university website."
 
     # Missing documents
@@ -116,9 +118,12 @@ def answer_question(question: str, profile: dict[str, Any], result: dict[str, An
         agg = profile.get("aggregate")
         cutoff = result.get("estimated_cutoff")
         minimum = result.get("minimum_aggregate")
+        agg_str = f"{agg}%" if agg is not None else "N/A"
+        cutoff_str = f"{cutoff}%" if cutoff is not None else "N/A"
+        minimum_str = f"{minimum}%" if minimum is not None else "N/A"
         return (
-            f"Your profile aggregate is **{agg}%**. "
-            f"The minimum required aggregate is **{minimum}%**, and the estimated cutoff is **{cutoff}%**."
+            f"Your profile aggregate is **{agg_str}**. "
+            f"The minimum required aggregate is **{minimum_str}**, and the estimated cutoff is **{cutoff_str}**."
         )
 
     # Fallback grounded response

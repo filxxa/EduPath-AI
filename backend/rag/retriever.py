@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import functools
+import logging
 import re
 from typing import Any
 
@@ -20,6 +21,8 @@ from backend.rag.config import (
     UNIVERSITY_ALIASES,
 )
 from backend.rag.indexer import build_collection, get_persistent_client
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -142,7 +145,8 @@ class Retriever:
                     where={"university_id": effective_uni},
                 )
                 results.extend(_materialize(hits))
-            except Exception:
+            except Exception as exc:
+                logger.warning("University-scoped retrieval failed: %s", exc)
                 results = []
 
         if len(results) < MIN_UNIVERSITY_RESULTS:
@@ -154,8 +158,8 @@ class Retriever:
                     if key not in seen:
                         results.append(chunk)
                         seen.add(key)
-            except Exception:
-                pass
+            except Exception as exc:
+                logger.error("Broad retrieval fallback failed: %s", exc)
 
         if intent["category"] and len(results) > 1:
             results.sort(

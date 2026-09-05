@@ -65,9 +65,9 @@ def process_upload(
         from backend.documents.categories import CATEGORY_TO_CANONICAL
         user_canonical = CATEGORY_TO_CANONICAL.get(user_category, user_category)
         if user_canonical != auto_category:
-            validation.add_warning(
-                f"Auto-classification detected '{auto_category}' but you "
-                f"categorized this as '{user_category}'. Using your selection."
+            logger.info(
+                f"Pipeline [{filename}]: user selected '{user_category}' but "
+                f"auto-classification detected '{auto_category}'. Using user selection."
             )
 
     routing_category = user_category or auto_category
